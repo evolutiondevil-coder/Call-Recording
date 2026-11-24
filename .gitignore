@@ -12,6 +12,7 @@
 *.keystore
 !debug.keystore
 *.jks
+# The app's release key lives in the (private) repository so CI can sign every version.
+!signing/*.jks
 /app/release/
 keystore.properties
-/signing/
