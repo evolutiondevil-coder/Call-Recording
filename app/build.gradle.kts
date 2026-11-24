@@ -7,12 +7,15 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Optional release signing: create keystore.properties in the project root with
-// storeFile, storePassword, keyAlias, keyPassword. Without it the release build
-// is signed with the local debug key so that it can still be installed.
+// Release signing: keystore.properties (local override, not committed) or
+// signing/signing.properties (the app's release key, kept in the private repository),
+// each with storeFile, storePassword, keyAlias, keyPassword. Without either, the
+// release build is signed with the local debug key so that it can still be installed.
 val keystoreProps = Properties().apply {
-    val f = rootProject.file("keystore.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
+    val f = listOf("keystore.properties", "signing/signing.properties")
+        .map { rootProject.file(it) }
+        .firstOrNull { it.exists() }
+    f?.inputStream()?.use { load(it) }
 }
 
 android {

@@ -72,20 +72,14 @@ APK файлът е в `app/build/outputs/apk/release/`.
 ./gradlew testDebugUnitTest
 ```
 
-### Подписване
+### Нова версия
 
-Създайте `keystore.properties` в корена на проекта (файлът е в `.gitignore`):
+1. Увеличете `versionCode` и `versionName` в `app/build.gradle.kts` (и при желание опишете промените в `release/RELEASE_NOTES.md`).
+2. Качете промените в основния клон.
 
-```properties
-storeFile=signing/call-recorder-release.jks
-storePassword=...
-keyAlias=callrecorder
-keyPassword=...
-```
+GitHub Actions сам компилира APK, подписва го с ключа на приложението от папка `signing/` и го публикува в [Releases](https://github.com/evolutiondevil-coder/Call-Recording/releases). Всички версии са с един и същ ключ, затова новата се инсталира върху старата и записите остават.
 
-Без него release версията се подписва с локалния debug ключ. **Пазете ключа си:** обновяванията трябва да са подписани със същия ключ. Иначе приложението трябва да се деинсталира, а това изтрива записите в паметта на приложението.
-
-За GitHub Actions добавете тайните `SIGNING_KEYSTORE_BASE64` (резултатът от `base64 -w0 call-recorder-release.jks`), `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS` и `SIGNING_KEY_PASSWORD`.
+> Ключът е в хранилището, затова то трябва да остане **частно**.
 
 ## Технологии
 
