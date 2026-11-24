@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      # Optional: add these repository secrets to sign the release APK with your own key.
-      SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-      SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-      SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-      SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      # The password of signing/call-recorder-release.jks (repository secret). Without it,
+      # the APKs here are signed with a throwaway debug key and are only for testing.
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,18 +22,6 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v4
-
-      - name: Configure release signing
-        if: env.SIGNING_KEYSTORE_BASE64 != ''
-        run: |
-          mkdir -p signing
-          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > signing/release.jks
-          {
-            echo "storeFile=signing/release.jks"
-            echo "storePassword=$SIGNING_STORE_PASSWORD"
-            echo "keyAlias=$SIGNING_KEY_ALIAS"
-            echo "keyPassword=$SIGNING_KEY_PASSWORD"
-          } > keystore.properties
 
       # Build first, so the APK is always available even if a test fails.
       - name: Build APKs
@@ -63,13 +49,14 @@ jobs:
   # On the default branch: if versionName in app/build.gradle.kts has no release yet, build the
   # APK signed with the app's release key and publish it as v<versionName> on the Releases page.
   release:
-    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,8 +65,8 @@ jobs:
         run: |
           version=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts | head -n 1)
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if [ ! -f signing/signing.properties ]; then
-            echo "::notice::No release key in the repository, nothing to publish"
+          if [ ! -f signing/signing.properties ] || [ -z "$SIGNING_PASSWORD" ]; then
+            echo "::notice::The SIGNING_PASSWORD secret is not set, nothing to publish"
           elif gh release view "v$version" > /dev/null 2>&1; then
             echo "Release v$version already exists"
           else

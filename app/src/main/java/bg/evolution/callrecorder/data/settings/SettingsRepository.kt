@@ -47,6 +47,8 @@ data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = true,
     val onboardingDone: Boolean = false,
+    /** Check GitHub for a new version on start and download it automatically. */
+    val autoUpdate: Boolean = true,
 ) {
     fun isAppEnabled(pkg: String): Boolean = pkg !in disabledApps
 
@@ -77,6 +79,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val theme = stringPreferencesKey("theme")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
         val onboardingDone = booleanPreferencesKey("onboarding_done")
+        val autoUpdate = booleanPreferencesKey("auto_update")
     }
 
     private val store = context.dataStore
@@ -110,6 +113,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             themeMode = enumOr(p[K.theme], d.themeMode),
             dynamicColor = p[K.dynamicColor] ?: d.dynamicColor,
             onboardingDone = p[K.onboardingDone] ?: d.onboardingDone,
+            autoUpdate = p[K.autoUpdate] ?: d.autoUpdate,
         )
     }
 
@@ -151,6 +155,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
     suspend fun setThemeMode(v: ThemeMode) = edit { it[K.theme] = v.name }
     suspend fun setDynamicColor(v: Boolean) = edit { it[K.dynamicColor] = v }
     suspend fun setOnboardingDone(v: Boolean) = edit { it[K.onboardingDone] = v }
+    suspend fun setAutoUpdate(v: Boolean) = edit { it[K.autoUpdate] = v }
 
     /** Restores every setting to its default value. */
     suspend fun resetAll() = edit { it.clear() }

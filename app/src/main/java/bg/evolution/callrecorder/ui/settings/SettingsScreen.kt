@@ -1,6 +1,16 @@
 package bg.evolution.callrecorder.ui.settings
 
 import android.os.Build
+import android.app.Activity
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.ui.platform.LocalContext
+import bg.evolution.callrecorder.core.AppLocale
+import bg.evolution.callrecorder.ui.components.UpdateCard
+import bg.evolution.callrecorder.ui.components.isWorthShowing
+import bg.evolution.callrecorder.ui.components.message
+import bg.evolution.callrecorder.update.UpdateState
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -99,6 +109,9 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
     val formats by vm.formats.collectAsStateWithLifecycle()
     val apps by vm.installedApps.collectAsStateWithLifecycle()
     val totalSize by vm.totalSize.collectAsStateWithLifecycle()
+    val update by vm.updates.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var language by remember { mutableStateOf(AppLocale.current(context)) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var dialog by rememberSaveable { mutableStateOf<String?>(null) }
@@ -195,11 +208,30 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
             }
             item {
                 Group(stringResource(R.string.group_appearance)) {
+                    ClickItem(Icons.Rounded.Language, stringResource(R.string.set_language), AppLocale.label(language, stringResource(R.string.language_system))) { dialog = "language" }
+                    Divider()
                     ClickItem(Icons.Rounded.DarkMode, stringResource(R.string.set_theme), themeLabel(s.themeMode)) { dialog = "theme" }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         Divider()
                         SwitchItem(Icons.Rounded.ColorLens, stringResource(R.string.set_dynamic_color), stringResource(R.string.set_dynamic_color_sub), s.dynamicColor, onChange = vm::setDynamicColor)
                     }
+                }
+            }
+            if (vm.updates.supported) {
+                item {
+                    Group(stringResource(R.string.group_updates)) {
+                        SwitchItem(Icons.Rounded.SystemUpdate, stringResource(R.string.set_auto_update), stringResource(R.string.set_auto_update_sub), s.autoUpdate, onChange = vm::setAutoUpdate)
+                        Divider()
+                        ClickItem(
+                            Icons.Rounded.Refresh,
+                            stringResource(R.string.set_check_update),
+                            stringResource(R.string.set_version, vm.updates.currentVersion) + " · " + updateStatusText(update),
+                            enabled = update !is UpdateState.Checking && update !is UpdateState.Downloading,
+                        ) { vm.updates.checkNow() }
+                    }
+                }
+                if (update.isWorthShowing()) {
+                    item { UpdateCard(update, onInstall = vm.updates::install, onRetry = vm.updates::checkNow, modifier = Modifier.padding(top = 8.dp)) }
                 }
             }
             item {
@@ -242,6 +274,19 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
             stringResource(R.string.set_auto_delete), listOf(0, 7, 30, 90, 180, 365), s.autoDeleteDays, { autoDeleteLabel(it) },
             onSelect = vm::setAutoDelete, onDismiss = { dialog = null },
         )
+        "language" -> ChoiceDialog(
+            stringResource(R.string.set_language), AppLocale.options, language,
+            { AppLocale.label(it, stringResource(R.string.language_system)) },
+            onSelect = { lang ->
+                if (lang != language) {
+                    language = lang
+                    AppLocale.set(context, lang)
+                    // Android 13+ recreates the screen by itself; older versions need a nudge.
+                    if (Build.VERSION.SDK_INT < 33) (context as? Activity)?.recreate()
+                }
+            },
+            onDismiss = { dialog = null },
+        )
         "theme" -> ChoiceDialog(
             stringResource(R.string.set_theme), ThemeMode.entries, s.themeMode, { themeLabel(it) },
             onSelect = vm::setTheme, onDismiss = { dialog = null },
@@ -277,6 +322,17 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
 }
 
 // ---- labels ---------------------------------------------------------------------------------
+
+@Composable
+private fun updateStatusText(state: UpdateState): String = when (state) {
+    is UpdateState.Checking -> stringResource(R.string.update_checking)
+    is UpdateState.UpToDate -> stringResource(R.string.update_up_to_date)
+    is UpdateState.Downloading -> stringResource(R.string.update_downloading, (state.progress * 100).toInt())
+    is UpdateState.ReadyToInstall -> stringResource(R.string.update_available, state.release.version)
+    is UpdateState.Installing -> stringResource(R.string.update_installing)
+    is UpdateState.Failed -> stringResource(state.reason.message())
+    UpdateState.Idle -> ""
+}.ifEmpty { stringResource(R.string.set_check_update) }
 
 @Composable
 fun recordModeLabel(m: RecordMode) = stringResource(

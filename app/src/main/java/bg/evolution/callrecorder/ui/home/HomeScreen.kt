@@ -128,6 +128,8 @@ import bg.evolution.callrecorder.service.RecorderState
 import bg.evolution.callrecorder.ui.components.CallerAvatar
 import bg.evolution.callrecorder.ui.components.EmptyState
 import bg.evolution.callrecorder.ui.components.LevelBars
+import bg.evolution.callrecorder.ui.components.UpdateCard
+import bg.evolution.callrecorder.ui.components.isWorthShowing
 import bg.evolution.callrecorder.ui.components.rememberAppIcon
 import bg.evolution.callrecorder.ui.components.segmentShape
 import bg.evolution.callrecorder.ui.setup.Permissions
@@ -150,6 +152,7 @@ fun HomeScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val rec by vm.recorderState.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
+    val update by vm.updates.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var setup by remember { mutableStateOf(Permissions.status(context)) }
     LifecycleResumeEffect(Unit) {
@@ -235,6 +238,11 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 104.dp),
         ) {
+            if (update.isWorthShowing()) {
+                item(key = "update") {
+                    UpdateCard(update, onInstall = vm.updates::install, onRetry = vm.updates::checkNow, modifier = Modifier.animateItem())
+                }
+            }
             item(key = "status") {
                 StatusCard(
                     rec = rec,

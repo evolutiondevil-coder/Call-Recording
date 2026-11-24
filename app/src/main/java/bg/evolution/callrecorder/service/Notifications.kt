@@ -24,10 +24,12 @@ object Notifications {
     const val CHANNEL_SAVED = "saved"
     const val CHANNEL_PROBLEMS = "problems"
     const val CHANNEL_ASK = "ask"
+    const val CHANNEL_UPDATES = "updates"
 
     const val ID_RECORDING = 1001
     private const val ID_PROBLEM = 1002
     private const val ID_ASK = 1003
+    private const val ID_UPDATED = 1004
     private const val ID_SAVED_BASE = 2000
 
     enum class Problem { NO_MIC_PERMISSION, START_FAILED, SAVE_FAILED, SILENT }
@@ -51,6 +53,9 @@ object Notifications {
                 NotificationChannel(
                     CHANNEL_PROBLEMS, context.getString(R.string.channel_problems), NotificationManager.IMPORTANCE_HIGH,
                 ).apply { description = context.getString(R.string.channel_problems_desc) },
+                NotificationChannel(
+                    CHANNEL_UPDATES, context.getString(R.string.channel_updates), NotificationManager.IMPORTANCE_LOW,
+                ).apply { setShowBadge(false) },
                 NotificationChannel(
                     CHANNEL_ASK, context.getString(R.string.channel_ask), NotificationManager.IMPORTANCE_HIGH,
                 ).apply {
@@ -169,6 +174,18 @@ object Notifications {
             .addAction(0, context.getString(R.string.action_dont_record), action(context, NotificationActionReceiver.ACTION_DECLINE, 8))
             .build()
         post(context, ID_ASK, n)
+    }
+
+    fun showUpdated(context: Context, version: String) {
+        val n = NotificationCompat.Builder(context, CHANNEL_UPDATES)
+            .setSmallIcon(R.drawable.ic_stat_saved)
+            .setColor(ContextCompat.getColor(context, R.color.brand_primary))
+            .setContentTitle(context.getString(R.string.notif_updated_title))
+            .setContentText(context.getString(R.string.notif_updated_text, version))
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context))
+            .build()
+        post(context, ID_UPDATED, n)
     }
 
     fun cancelAsk(context: Context) {

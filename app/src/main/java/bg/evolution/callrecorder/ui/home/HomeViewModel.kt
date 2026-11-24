@@ -52,6 +52,7 @@ class HomeViewModel(private val graph: AppGraph) : ViewModel() {
     val recorderState: StateFlow<RecorderState> = graph.controller.state
     val level: StateFlow<Float> = graph.controller.level
     val settings = graph.settings.settings
+    val updates = graph.updates
 
     val state: StateFlow<HomeUiState> = combine(
         repo.recordings, filter, query, pendingDelete, selection,

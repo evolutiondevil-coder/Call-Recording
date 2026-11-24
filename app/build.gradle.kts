@@ -7,16 +7,20 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Release signing: keystore.properties (local override, not committed) or
-// signing/signing.properties (the app's release key, kept in the private repository),
-// each with storeFile, storePassword, keyAlias, keyPassword. Without either, the
+// Release signing. The key file is in signing/ (it is encrypted with its password); the password
+// itself is never committed: it comes from the SIGNING_PASSWORD environment variable (a GitHub
+// Actions secret) or from a local, git-ignored keystore.properties. Without a password the
 // release build is signed with the local debug key so that it can still be installed.
-val keystoreProps = Properties().apply {
-    val f = listOf("keystore.properties", "signing/signing.properties")
+val signingProps = Properties().apply {
+    listOf("signing/signing.properties", "keystore.properties")
         .map { rootProject.file(it) }
-        .firstOrNull { it.exists() }
-    f?.inputStream()?.use { load(it) }
+        .filter { it.exists() }
+        .forEach { f -> f.inputStream().use { load(it) } } // keystore.properties overrides
 }
+val signingPassword: String? = System.getenv("SIGNING_PASSWORD")?.takeIf { it.isNotBlank() }
+val releaseStoreFile: String? = signingProps.getProperty("storeFile")
+val releaseStorePassword: String? = signingProps.getProperty("storePassword") ?: signingPassword
+val releaseKeyPassword: String? = signingProps.getProperty("keyPassword") ?: signingPassword
 
 android {
     namespace = "bg.evolution.callrecorder"
@@ -26,18 +30,20 @@ android {
         applicationId = "bg.evolution.callrecorder"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // GitHub repository whose Releases page the app checks for updates.
+        buildConfigField("String", "UPDATE_REPO", "\"evolutiondevil-coder/Call-Recording\"")
     }
 
     signingConfigs {
-        if (keystoreProps.getProperty("storeFile") != null) {
+        if (releaseStoreFile != null && releaseStorePassword != null && releaseKeyPassword != null) {
             create("release") {
-                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
-                storePassword = keystoreProps.getProperty("storePassword")
-                keyAlias = keystoreProps.getProperty("keyAlias")
-                keyPassword = keystoreProps.getProperty("keyPassword")
+                storeFile = rootProject.file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = signingProps.getProperty("keyAlias")
+                keyPassword = releaseKeyPassword
             }
         }
     }

@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
 import bg.evolution.callrecorder.AppGraph
+import bg.evolution.callrecorder.core.AppLocale
 import bg.evolution.callrecorder.core.Logx
 
 /**
@@ -22,6 +23,10 @@ import bg.evolution.callrecorder.core.Logx
  * crash the app in that situation.
  */
 class RecordingService : Service() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 

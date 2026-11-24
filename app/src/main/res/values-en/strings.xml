@@ -201,7 +201,7 @@
     <string name="set_permissions_sub">Check that everything is ready to record</string>
     <string name="set_about">About</string>
     <string name="set_about_sub">Version %s · free, no ads</string>
-    <string name="about_text">Version %s\n\nCompletely free, no ads and no tracking. Recordings stay on your device only — the app has no internet access.</string>
+    <string name="about_text">Version %s\n\nCompletely free, no ads and no tracking. Recordings stay on your device only. The internet is used solely to check GitHub for a new version.</string>
     <string name="legal_text">Recording calls may be restricted by law. In many countries, including the EU, you must inform the other person and use recordings lawfully. You are responsible for how you use this app.</string>
 
     <string name="apps_title">Apps</string>
@@ -231,6 +231,30 @@
     <string name="privacy_text">Free, no ads. Recordings stay on your phone only.</string>
     <string name="setup_start">Go to recordings</string>
     <string name="setup_later">I\'ll do it later</string>
+
+    <string name="channel_updates">Updates</string>
+    <string name="notif_updated_title">App updated</string>
+    <string name="notif_updated_text">Version %s is installed.</string>
+    <string name="update_available">New version %s</string>
+    <string name="update_downloading">Downloading… %d%%</string>
+    <string name="update_ready">Downloaded and ready to install</string>
+    <string name="update_installing">Installing…</string>
+    <string name="update_failed_network">Download failed. Check your internet connection.</string>
+    <string name="update_failed_install">Installation failed. Try again or download it from GitHub.</string>
+    <string name="update_failed_signature">The downloaded file is not from this app and was deleted.</string>
+    <string name="update_failed_permission">Allow \"Install unknown apps\" for Call Recorder, then tap \"Install\" again.</string>
+    <string name="update_not_found">No versions are published on GitHub (or the repository is private).</string>
+    <string name="update_up_to_date">You have the latest version</string>
+    <string name="update_checking">Checking…</string>
+    <string name="action_install">Install</string>
+    <string name="action_retry">Try again</string>
+    <string name="group_updates">Updates</string>
+    <string name="set_auto_update">Automatic updates</string>
+    <string name="set_auto_update_sub">Checks GitHub for a new version on start and downloads it</string>
+    <string name="set_check_update">Check for updates</string>
+    <string name="set_version">Version %s</string>
+    <string name="set_language">Language</string>
+    <string name="language_system">System default</string>
 
     <plurals name="selected_count">
         <item quantity="one">%d selected</item>

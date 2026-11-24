@@ -1,14 +1,20 @@
 package bg.evolution.callrecorder.tile
 
+import android.content.Context
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import bg.evolution.callrecorder.AppGraph
+import bg.evolution.callrecorder.core.AppLocale
 import bg.evolution.callrecorder.R
 import kotlinx.coroutines.launch
 
 /** Quick Settings tile that switches automatic call recording on and off. */
 class AutoRecordTileService : TileService() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onStartListening() {
         super.onStartListening()

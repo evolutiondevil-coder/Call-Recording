@@ -3,6 +3,7 @@ package bg.evolution.callrecorder
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import bg.evolution.callrecorder.core.AppLocale
 import bg.evolution.callrecorder.data.RecordingRepository
 import bg.evolution.callrecorder.data.contacts.ContactLookup
 import bg.evolution.callrecorder.data.db.AppDatabase
@@ -11,6 +12,7 @@ import bg.evolution.callrecorder.data.storage.RecordingStorage
 import bg.evolution.callrecorder.detect.CallMonitor
 import bg.evolution.callrecorder.service.Notifications
 import bg.evolution.callrecorder.service.RecordingController
+import bg.evolution.callrecorder.update.UpdateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,6 +32,7 @@ class AppGraph(context: Context) {
         RecordingController(app, settings, storage, repository, contacts, scope)
     }
     val callMonitor: CallMonitor by lazy { CallMonitor(app, settings, controller, contacts) }
+    val updates: UpdateManager by lazy { UpdateManager(app, settings, scope) }
 
     companion object {
         // Holds only the application context, which lives as long as the process.
@@ -44,8 +47,13 @@ class AppGraph(context: Context) {
 }
 
 class CallRecorderApp : Application() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrap(base))
+    }
+
     override fun onCreate() {
         super.onCreate()
+        AppLocale.initialize(this)
         Notifications.createChannels(this)
         val graph = AppGraph.get(this)
         graph.scope.launch(Dispatchers.IO) {

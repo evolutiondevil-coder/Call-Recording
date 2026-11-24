@@ -209,7 +209,7 @@
     <string name="set_permissions_sub">Проверете дали всичко е готово за запис</string>
     <string name="set_about">За приложението</string>
     <string name="set_about_sub">Версия %s · безплатно, без реклами</string>
-    <string name="about_text">Версия %s\n\nНапълно безплатно, без реклами и без проследяване. Записите остават само на вашето устройство — приложението няма достъп до интернет.</string>
+    <string name="about_text">Версия %s\n\nНапълно безплатно, без реклами и без проследяване. Записите остават само на вашето устройство. Интернет се използва единствено за проверка за нова версия в GitHub.</string>
     <string name="legal_text">Записването на разговори може да е ограничено от закона. В България и ЕС трябва да уведомите събеседника си и да използвате записите само законно. Вие носите отговорност за начина, по който използвате приложението.</string>
 
     <!-- Apps -->
@@ -241,6 +241,31 @@
     <string name="privacy_text">Безплатно, без реклами. Записите остават само на телефона ви.</string>
     <string name="setup_start">Към записите</string>
     <string name="setup_later">Ще го направя по-късно</string>
+
+    <!-- Updates and language -->
+    <string name="channel_updates">Обновления</string>
+    <string name="notif_updated_title">Приложението е обновено</string>
+    <string name="notif_updated_text">Инсталирана е версия %s.</string>
+    <string name="update_available">Нова версия %s</string>
+    <string name="update_downloading">Изтегля се… %d%%</string>
+    <string name="update_ready">Изтеглена е и е готова за инсталиране</string>
+    <string name="update_installing">Инсталира се…</string>
+    <string name="update_failed_network">Изтеглянето не успя. Проверете интернета.</string>
+    <string name="update_failed_install">Инсталирането не успя. Опитайте отново или я свалете от GitHub.</string>
+    <string name="update_failed_signature">Изтегленият файл не е от това приложение и беше изтрит.</string>
+    <string name="update_failed_permission">Разрешете „Инсталиране на непознати приложения“ за „Запис на разговори“ и натиснете „Инсталирай“ отново.</string>
+    <string name="update_not_found">Няма публикувани версии в GitHub (или хранилището е частно).</string>
+    <string name="update_up_to_date">Имате най-новата версия</string>
+    <string name="update_checking">Проверява се…</string>
+    <string name="action_install">Инсталирай</string>
+    <string name="action_retry">Опитай пак</string>
+    <string name="group_updates">Обновления</string>
+    <string name="set_auto_update">Автоматично обновяване</string>
+    <string name="set_auto_update_sub">При стартиране проверява за нова версия в GitHub и я изтегля сама</string>
+    <string name="set_check_update">Провери за обновление</string>
+    <string name="set_version">Версия %s</string>
+    <string name="set_language">Език</string>
+    <string name="language_system">Като системата</string>
 
     <plurals name="selected_count">
         <item quantity="one">%d избран</item>

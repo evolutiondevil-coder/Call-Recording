@@ -25,6 +25,7 @@ import kotlinx.coroutines.withContext
 class SettingsViewModel(private val graph: AppGraph) : ViewModel() {
     private val repo = graph.settings
     val settings = repo.settings
+    val updates = graph.updates
     val totalSize: StateFlow<Long> = graph.repository.totalSize.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
 
     /** Formats this device can actually encode (checked once, off the main thread). */
@@ -74,6 +75,10 @@ class SettingsViewModel(private val graph: AppGraph) : ViewModel() {
     fun setNotifyAfterCall(v: Boolean) = set { repo.setNotifyAfterCall(v) }
     fun setTheme(v: ThemeMode) = set { repo.setThemeMode(v) }
     fun setDynamicColor(v: Boolean) = set { repo.setDynamicColor(v) }
+    fun setAutoUpdate(v: Boolean) = set {
+        repo.setAutoUpdate(v)
+        if (v) updates.checkNow()
+    }
 
     /**
      * Saves a folder picked with the system picker and keeps write access to it across reboots.

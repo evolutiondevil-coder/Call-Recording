@@ -1,5 +1,6 @@
 package bg.evolution.callrecorder.ui
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -32,6 +33,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import bg.evolution.callrecorder.AppGraph
+import bg.evolution.callrecorder.core.AppLocale
 import bg.evolution.callrecorder.ui.home.HomeScreen
 import bg.evolution.callrecorder.ui.home.HomeViewModel
 import bg.evolution.callrecorder.ui.player.PlayerScreen
@@ -47,12 +49,19 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val openRecording = MutableStateFlow<Long?>(null)
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        if (savedInstanceState == null) handleIntent(intent)
         val graph = AppGraph.get(this)
+        if (savedInstanceState == null) {
+            handleIntent(intent)
+            graph.updates.checkOnStart()
+        }
         setContent {
             val settings by graph.settings.settings.collectAsStateWithLifecycle()
             CallRecorderTheme(settings.themeMode, settings.dynamicColor) {
