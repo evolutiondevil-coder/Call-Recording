@@ -2,6 +2,9 @@ package bg.evolution.callrecorder.ui.settings
 
 import android.content.Intent
 import android.net.Uri
+import android.provider.ContactsContract
+import bg.evolution.callrecorder.core.PhoneNumbers
+import bg.evolution.callrecorder.core.SelectedContact
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bg.evolution.callrecorder.AppGraph
@@ -26,6 +29,7 @@ class SettingsViewModel(private val graph: AppGraph) : ViewModel() {
     private val repo = graph.settings
     val settings = repo.settings
     val updates = graph.updates
+    val lock = graph.lock
     val totalSize: StateFlow<Long> = graph.repository.totalSize.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
 
     /** Formats this device can actually encode (checked once, off the main thread). */
@@ -67,6 +71,22 @@ class SettingsViewModel(private val graph: AppGraph) : ViewModel() {
     fun setFilterMode(v: RecordFilterMode) = set { repo.setFilterMode(v) }
     fun addExcluded(n: String) = set { repo.addExcludedNumber(n) }
     fun removeExcluded(n: String) = set { repo.removeExcludedNumber(n) }
+    fun addSelected(c: SelectedContact) = set { repo.addSelectedContact(c) }
+    fun removeSelected(c: SelectedContact) = set { repo.removeSelectedContact(c) }
+
+    /** Adds the phone number picked in the system contact picker (the result URI grants read access). */
+    fun addSelectedFromPicker(uri: Uri) = set {
+        val contact = withContext(Dispatchers.IO) {
+            runCatching {
+                graph.app.contentResolver.query(
+                    uri,
+                    arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME),
+                    null, null, null,
+                )?.use { c -> if (c.moveToFirst()) SelectedContact(PhoneNumbers.normalize(c.getString(0)), c.getString(1)) else null }
+            }.getOrNull()
+        }
+        if (contact != null && (contact.number != null || contact.name != null)) repo.addSelectedContact(contact)
+    }
     fun setMinDuration(v: Int) = set { repo.setMinDuration(v) }
     fun setAutoDelete(v: Int) = set {
         repo.setAutoDeleteDays(v)

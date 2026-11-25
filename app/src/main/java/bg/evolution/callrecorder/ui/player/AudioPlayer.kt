@@ -2,10 +2,14 @@ package bg.evolution.callrecorder.ui.player
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import bg.evolution.callrecorder.core.EarpiecePlayback
 import bg.evolution.callrecorder.core.Logx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -24,36 +28,48 @@ data class PlayerState(
     val durationMs: Long = 0,
     val speed: Float = 1f,
     val error: Boolean = false,
+    /** Play quietly through the earpiece, like a phone call, instead of the loudspeaker. */
+    val earpiece: Boolean = false,
 )
 
-/** Small MediaPlayer wrapper with audio focus, speed control and a position ticker. */
+/** Small MediaPlayer wrapper with audio focus, speed control, earpiece mode and a position ticker. */
 class AudioPlayer(private val context: Context, private val scope: CoroutineScope) {
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = _state.asStateFlow()
 
     private var player: MediaPlayer? = null
+    private var source: Pair<String, Long>? = null
     private var ticker: Job? = null
     private var pendingSeek = -1L
     private var playWhenReady = false
+    private var routedToEarpiece = false
+    private var proximityLock: PowerManager.WakeLock? = null
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    private val attributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_MEDIA)
+
+    private fun attributes(earpiece: Boolean): AudioAttributes = AudioAttributes.Builder()
+        .setUsage(if (earpiece) AudioAttributes.USAGE_VOICE_COMMUNICATION else AudioAttributes.USAGE_MEDIA)
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
         .build()
-    private val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-        .setAudioAttributes(attributes)
+
+    private var focusRequest = buildFocusRequest(false)
+
+    private fun buildFocusRequest(earpiece: Boolean) = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+        .setAudioAttributes(attributes(earpiece))
         .setOnAudioFocusChangeListener { change ->
             if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) pause()
         }
         .build()
 
     fun load(uri: String, knownDurationMs: Long) {
+        val earpiece = _state.value.earpiece
         release()
-        _state.value = PlayerState(durationMs = knownDurationMs, speed = _state.value.speed)
+        source = uri to knownDurationMs
+        _state.value = PlayerState(durationMs = knownDurationMs, speed = _state.value.speed, earpiece = earpiece)
+        focusRequest = buildFocusRequest(earpiece)
         val mp = MediaPlayer()
         player = mp
         try {
-            mp.setAudioAttributes(attributes)
+            mp.setAudioAttributes(attributes(earpiece))
             mp.setDataSource(context, Uri.parse(uri))
             mp.setOnPreparedListener {
                 val d = it.duration.toLong().takeIf { ms -> ms > 0 } ?: knownDurationMs
@@ -65,12 +81,12 @@ class AudioPlayer(private val context: Context, private val scope: CoroutineScop
                 if (playWhenReady) play()
             }
             mp.setOnCompletionListener {
-                abandonFocus()
-                stopTicker()
+                stopOutput()
                 _state.update { s -> s.copy(playing = false, positionMs = s.durationMs) }
             }
             mp.setOnErrorListener { _, what, extra ->
                 Logx.w("MediaPlayer error $what/$extra")
+                stopOutput()
                 _state.update { s -> s.copy(error = true, playing = false) }
                 true
             }
@@ -79,6 +95,18 @@ class AudioPlayer(private val context: Context, private val scope: CoroutineScop
             Logx.e("Cannot open recording", e)
             _state.update { it.copy(error = true) }
         }
+    }
+
+    /** Switches between loudspeaker and earpiece, keeping the position (and playing on if it was). */
+    fun setEarpiece(on: Boolean) {
+        if (_state.value.earpiece == on) return
+        val wasPlaying = _state.value.playing
+        val position = _state.value.positionMs
+        _state.update { it.copy(earpiece = on) }
+        val src = source ?: return
+        load(src.first, src.second)
+        seekTo(position)
+        if (wasPlaying) play()
     }
 
     fun toggle() = if (_state.value.playing) pause() else play()
@@ -93,6 +121,7 @@ class AudioPlayer(private val context: Context, private val scope: CoroutineScop
         playWhenReady = false
         if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
         try {
+            if (s.earpiece) routeToEarpiece()
             if (s.positionMs >= s.durationMs - 50 && s.durationMs > 0) mp.seekTo(0)
             mp.playbackParams = mp.playbackParams.setSpeed(s.speed)
             mp.start()
@@ -100,6 +129,7 @@ class AudioPlayer(private val context: Context, private val scope: CoroutineScop
             startTicker()
         } catch (e: Exception) {
             Logx.w("play() failed", e)
+            stopOutput()
         }
     }
 
@@ -107,8 +137,7 @@ class AudioPlayer(private val context: Context, private val scope: CoroutineScop
         playWhenReady = false
         val mp = player ?: return
         runCatching { if (mp.isPlaying) mp.pause() }
-        stopTicker()
-        abandonFocus()
+        stopOutput()
         _state.update { it.copy(playing = false, positionMs = runCatching { mp.currentPosition.toLong() }.getOrDefault(it.positionMs)) }
     }
 
@@ -133,6 +162,45 @@ class AudioPlayer(private val context: Context, private val scope: CoroutineScop
         if (_state.value.playing) runCatching { mp.playbackParams = mp.playbackParams.setSpeed(speed) }
     }
 
+    /**
+     * Earpiece output, as in a phone call: communication mode, the built-in earpiece as the
+     * output device, and the screen switched off while the phone is held to the ear.
+     */
+    private fun routeToEarpiece() {
+        if (routedToEarpiece) return
+        routedToEarpiece = true
+        EarpiecePlayback.active = true
+        runCatching { audioManager.mode = AudioManager.MODE_IN_COMMUNICATION }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            audioManager.availableCommunicationDevices
+                .firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE }
+                ?.let { runCatching { audioManager.setCommunicationDevice(it) } }
+        } else {
+            @Suppress("DEPRECATION")
+            runCatching { audioManager.isSpeakerphoneOn = false }
+        }
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (pm.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+            proximityLock = pm.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "CallRecorder:earpiece").apply {
+                setReferenceCounted(false)
+                acquire(3 * 60 * 60 * 1000L)
+            }
+        }
+    }
+
+    /** Undoes everything [play] set up: ticker, audio focus and earpiece routing. */
+    private fun stopOutput() {
+        stopTicker()
+        runCatching { audioManager.abandonAudioFocusRequest(focusRequest) }
+        if (!routedToEarpiece) return
+        routedToEarpiece = false
+        runCatching { proximityLock?.takeIf { it.isHeld }?.release() }
+        proximityLock = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) runCatching { audioManager.clearCommunicationDevice() }
+        runCatching { audioManager.mode = AudioManager.MODE_NORMAL }
+        EarpiecePlayback.active = false
+    }
+
     private fun startTicker() {
         ticker?.cancel()
         ticker = scope.launch {
@@ -150,13 +218,8 @@ class AudioPlayer(private val context: Context, private val scope: CoroutineScop
         ticker = null
     }
 
-    private fun abandonFocus() {
-        runCatching { audioManager.abandonAudioFocusRequest(focusRequest) }
-    }
-
     fun release() {
-        stopTicker()
-        abandonFocus()
+        stopOutput()
         player?.let { runCatching { it.release() } }
         player = null
         pendingSeek = -1

@@ -112,6 +112,7 @@
     <string name="direction_unknown">Call</string>
 
     <string name="player_error">This recording can\'t be played. The file may have been moved or deleted.</string>
+    <string name="player_earpiece">Listen through the earpiece</string>
     <string name="note_title">Note</string>
     <string name="note_hint">Add a note about this call…</string>
     <string name="info_format">Format</string>
@@ -154,6 +155,15 @@
     <string name="filter_mode_all">Everyone</string>
     <string name="filter_mode_contacts">Contacts only</string>
     <string name="filter_mode_unknown">Unknown numbers only</string>
+    <string name="filter_mode_selected">Selected contacts only</string>
+    <string name="filter_mode_selected_desc">Only calls with the contacts you choose are recorded.</string>
+    <string name="set_selected">Selected contacts</string>
+    <string name="selected_none_warning">None selected — nothing will be recorded</string>
+    <string name="selected_desc">Only calls with these contacts are recorded. For Viber, WhatsApp and others the contact name is compared.</string>
+    <string name="action_pick_contact">Choose from contacts</string>
+    <string name="action_add_note">Note</string>
+    <string name="note_input_hint">Write a note…</string>
+    <string name="notif_note_saved">Note saved: %s</string>
     <string name="set_excluded">Excluded numbers</string>
     <string name="set_excluded_none">None</string>
     <string name="excluded_desc">Calls with these numbers are never recorded.</string>
@@ -277,5 +287,47 @@
     <plurals name="older_than_days">
         <item quantity="one">Older than %d day</item>
         <item quantity="other">Older than %d days</item>
+    </plurals>
+    <plurals name="contacts_count">
+        <item quantity="one">%d contact</item>
+        <item quantity="other">%d contacts</item>
+    </plurals>
+
+    <!-- App lock -->
+    <string name="group_security">Security</string>
+    <string name="set_app_lock">PIN lock</string>
+    <string name="set_app_lock_sub">Ask for a PIN when the app is opened</string>
+    <string name="set_biometric">Fingerprint</string>
+    <string name="set_biometric_sub">Unlock with a fingerprint or face too</string>
+    <string name="set_biometric_unavailable">Add a fingerprint in the phone\'s settings first</string>
+    <string name="set_lock_after">Lock after</string>
+    <string name="set_change_pin">Change PIN</string>
+    <string name="lock_after_immediately">Immediately</string>
+    <string name="lock_after_desc">How long the app may stay closed before it asks for the PIN again.</string>
+    <string name="lock_title">Enter your PIN</string>
+    <string name="lock_subtitle">Your recordings are protected</string>
+    <string name="lock_locked_out">Too many wrong attempts. Try again in %s.</string>
+    <string name="lock_biometric_title">Unlock the app</string>
+    <string name="lock_use_pin">Use PIN</string>
+    <string name="lock_use_fingerprint">Unlock with fingerprint</string>
+    <string name="lock_forgot">Forgot your PIN?</string>
+    <string name="lock_forgot_title">Confirm with your phone\'s screen lock</string>
+    <string name="lock_forgot_unavailable">Without the PIN, the app can only be unlocked with the phone\'s screen lock, which is turned off. Turn it on in the phone\'s settings and try again.</string>
+    <string name="pin_verify_title">Enter your current PIN</string>
+    <string name="pin_choose_title">Choose a PIN</string>
+    <string name="pin_choose_sub">4 to 8 digits</string>
+    <string name="pin_confirm_title">Repeat the PIN</string>
+    <string name="pin_confirm_sub">Enter the same digits once more</string>
+    <string name="pin_mismatch">The two PINs don\'t match. Try again.</string>
+    <string name="pin_entered">Digits entered: %d</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_backspace">Delete digit</string>
+    <plurals name="lock_attempts_left">
+        <item quantity="one">Wrong PIN. %d attempt left.</item>
+        <item quantity="other">Wrong PIN. %d attempts left.</item>
+    </plurals>
+    <plurals name="lock_after_minutes">
+        <item quantity="one">After %d minute</item>
+        <item quantity="other">After %d minutes</item>
     </plurals>
 </resources>

@@ -92,3 +92,11 @@ object Logx {
     fun w(msg: String, t: Throwable? = null) = Log.w(TAG, msg, t)
     fun e(msg: String, t: Throwable? = null) = Log.e(TAG, msg, t)
 }
+
+/**
+ * Set while the app's own player sends audio to the earpiece. That switches the phone into
+ * communication mode, which call detection must not mistake for an internet call.
+ */
+object EarpiecePlayback {
+    @Volatile var active: Boolean = false
+}

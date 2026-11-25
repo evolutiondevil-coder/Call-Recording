@@ -10,6 +10,7 @@ import bg.evolution.callrecorder.data.db.AppDatabase
 import bg.evolution.callrecorder.data.settings.SettingsRepository
 import bg.evolution.callrecorder.data.storage.RecordingStorage
 import bg.evolution.callrecorder.detect.CallMonitor
+import bg.evolution.callrecorder.security.AppLock
 import bg.evolution.callrecorder.service.Notifications
 import bg.evolution.callrecorder.service.RecordingController
 import bg.evolution.callrecorder.update.UpdateManager
@@ -33,6 +34,8 @@ class AppGraph(context: Context) {
     }
     val callMonitor: CallMonitor by lazy { CallMonitor(app, settings, controller, contacts) }
     val updates: UpdateManager by lazy { UpdateManager(app, settings, scope) }
+    /** Created with the process, so a lock that is on covers the app from its first frame. */
+    val lock = AppLock(app)
 
     companion object {
         // Holds only the application context, which lives as long as the process.

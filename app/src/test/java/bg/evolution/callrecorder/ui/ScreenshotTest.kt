@@ -31,6 +31,8 @@ import bg.evolution.callrecorder.ui.components.UpdateCard
 import bg.evolution.callrecorder.ui.home.HomeScreen
 import bg.evolution.callrecorder.ui.home.HomeViewModel
 import bg.evolution.callrecorder.ui.home.StatusCard
+import bg.evolution.callrecorder.ui.lock.PinCheckScreen
+import bg.evolution.callrecorder.ui.lock.PinSetupScreen
 import bg.evolution.callrecorder.ui.player.PlayerScreen
 import bg.evolution.callrecorder.ui.player.PlayerViewModel
 import bg.evolution.callrecorder.ui.settings.AppsScreen
@@ -57,6 +59,8 @@ import kotlin.math.sin
 
 private const val NARROW = "bg-w360dp-h800dp-xxhdpi"
 private const val WIDE = "bg-w411dp-h891dp-xxhdpi"
+private const val LANDSCAPE = "bg-w800dp-h360dp-land-xxhdpi"
+private const val TALL = "bg-w411dp-h2600dp-xxhdpi"
 
 /**
  * Renders every screen and state with sample data into app/build/screenshots, on a narrow
@@ -198,7 +202,7 @@ class ScreenshotTest {
     @Test @Config(qualifiers = NARROW)
     fun playerNarrow() { val id = seed(); val vm = PlayerViewModel(graph, id); shot("07-player-narrow", dark = true) { PlayerScreen(vm) {} } }
 
-    @Test fun settings() { val vm = SettingsViewModel(graph); shot("08-settings") { SettingsScreen(vm, {}, {}, {}) } }
+    @Test fun settings() { val vm = SettingsViewModel(graph); shot("08-settings") { SettingsScreen(vm, {}, {}, {}, {}) } }
 
     @Test @Config(qualifiers = NARROW)
     fun appsNarrow() { val vm = SettingsViewModel(graph); shot("09-apps-narrow") { AppsScreen(vm) {} } }
@@ -206,5 +210,39 @@ class ScreenshotTest {
     @Test @Config(qualifiers = NARROW)
     fun setupNarrow() {
         shot("10-setup-narrow") { SetupScreen(onboarding = true, recordMode = RecordMode.ASK, onRecordMode = {}, onDone = {}, onBack = {}) }
+    }
+
+    // ---- app lock ----------------------------------------------------------------------------
+
+    private fun withLock(block: () -> Unit) {
+        graph.lock.setPin("2580")
+        try {
+            block()
+        } finally {
+            graph.lock.disable()
+        }
+    }
+
+    @Test @Config(qualifiers = NARROW)
+    fun lockNarrow() = withLock {
+        shot("11-lock-narrow") { PinCheckScreen(graph.lock, "Въведете ПИН", onSuccess = {}, onForgotConfirmed = {}) }
+    }
+
+    @Test fun lockDark() = withLock {
+        shot("12-lock-dark", dark = true) { PinCheckScreen(graph.lock, "Въведете ПИН", onSuccess = {}, onForgotConfirmed = {}) }
+    }
+
+    @Test @Config(qualifiers = LANDSCAPE)
+    fun lockLandscape() = withLock {
+        shot("13-lock-landscape") { PinCheckScreen(graph.lock, "Въведете сегашния ПИН", onSuccess = {}, onForgotConfirmed = {}, onCancel = {}) }
+    }
+
+    @Test @Config(qualifiers = NARROW)
+    fun pinSetupNarrow() { shot("14-pin-setup-narrow") { PinSetupScreen(onDone = {}, onCancel = {}) } }
+
+    @Test @Config(qualifiers = TALL)
+    fun settingsWithLock() = withLock {
+        val vm = SettingsViewModel(graph)
+        shot("15-settings-lock-tall") { SettingsScreen(vm, {}, {}, {}, {}) }
     }
 }

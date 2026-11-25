@@ -72,7 +72,32 @@ enum class AudioSourceOption { AUTO, VOICE_RECOGNITION, MIC, VOICE_COMMUNICATION
 enum class RecordMode { ALWAYS, ASK }
 
 /** Which phone calls should be recorded. */
-enum class RecordFilterMode { ALL, CONTACTS_ONLY, UNKNOWN_ONLY }
+enum class RecordFilterMode { ALL, CONTACTS_ONLY, UNKNOWN_ONLY, SELECTED_ONLY }
+
+/** A contact on the "record only these" list (number and/or name). */
+data class SelectedContact(val number: String?, val name: String?) {
+    val label: String get() = listOfNotNull(name?.takeIf { it.isNotBlank() }, number).joinToString(" · ")
+
+    fun encode(): String = (number ?: "") + SEP + (name ?: "")
+
+    /** Matches a cellular call by number, an internet call by the contact's name. */
+    fun matches(callNumber: String?, callName: String?): Boolean {
+        if (number != null && callNumber != null && PhoneNumbers.matches(number, callNumber)) return true
+        val n = name?.trim()?.takeIf { it.isNotEmpty() } ?: return false
+        return callName?.trim()?.equals(n, ignoreCase = true) == true
+    }
+
+    companion object {
+        private const val SEP = "\u001F"
+
+        fun decode(s: String): SelectedContact? {
+            val parts = s.split(SEP, limit = 2)
+            val number = PhoneNumbers.normalize(parts.getOrNull(0))
+            val name = parts.getOrNull(1)?.trim()?.takeIf { it.isNotEmpty() }
+            return if (number == null && name == null) null else SelectedContact(number, name)
+        }
+    }
+}
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 

@@ -11,6 +11,7 @@ import android.telephony.TelephonyManager
 import bg.evolution.callrecorder.core.CallDirection
 import bg.evolution.callrecorder.core.CallInfo
 import bg.evolution.callrecorder.core.CallSource
+import bg.evolution.callrecorder.core.EarpiecePlayback
 import bg.evolution.callrecorder.core.Logx
 import bg.evolution.callrecorder.core.PhoneNumbers
 import bg.evolution.callrecorder.core.RecordMode
@@ -113,7 +114,7 @@ class CallMonitor(
         if (!s.autoRecord || !s.recordPhoneCalls) return
         val number = callNumber
         val name = contacts.nameFor(number)
-        if (number != null && !CallFilter.shouldKeep(s, number, isContact = name != null)) {
+        if ((number != null || name != null) && !CallFilter.shouldKeep(s, number, isContact = name != null, name = name)) {
             Logx.i("Not recording this call (filter)")
             return
         }
@@ -134,6 +135,8 @@ class CallMonitor(
     private var foregroundAt = 0L
     private var voipSession = 0L
     private var voipPkg: String? = null
+    /** The current internet call was deliberately not recorded (filter); don't retry until it ends. */
+    private var voipSkipped = false
     /** When the call audio mode was first seen (0 = not in that mode). Used to debounce. All times are elapsedRealtime. */
     private var communicationSince = 0L
     private var inactiveSince = 0L
@@ -195,6 +198,7 @@ class CallMonitor(
     }
 
     private fun isCommunicationMode(): Boolean {
+        if (EarpiecePlayback.active) return false // our own player, not a call
         val mode = runCatching { audioManager.mode }.getOrDefault(AudioManager.MODE_NORMAL)
         return mode == AudioManager.MODE_IN_COMMUNICATION ||
             (mode == AudioManager.MODE_IN_CALL && phoneState == TelephonyManager.CALL_STATE_IDLE)
@@ -204,6 +208,7 @@ class CallMonitor(
         val now = SystemClock.elapsedRealtime()
         val communication = isCommunicationMode()
         communicationSince = if (communication) (communicationSince.takeIf { it != 0L } ?: now) else 0L
+        if (!communication) voipSkipped = false
         if (voipSession != 0L) {
             // Wait until the call mode has been gone for a moment so short glitches don't split a call.
             if (!communication || inPhoneCall) {
@@ -225,7 +230,7 @@ class CallMonitor(
 
     private fun maybeStartVoip(communication: Boolean, now: Long) {
         val s = settings.current
-        if (!communication || !s.autoRecord || !s.recordVoip || inPhoneCall || controller.isBusy) return
+        if (!communication || voipSkipped || !s.autoRecord || !s.recordVoip || inPhoneCall || controller.isBusy) return
         val pkg = pickCallingApp() ?: return
         if (!s.isAppEnabled(pkg) || (!VoipApps.isKnown(pkg) && !s.recordOtherApps)) return
         // Require the call mode for a moment before starting, to skip voice-message playback blips.
@@ -259,6 +264,11 @@ class CallMonitor(
     private fun startVoip(pkg: String) {
         val now = SystemClock.elapsedRealtime()
         val notif = callNotifications.values.filter { it.packageName == pkg }.maxByOrNull { it.postedAt }
+        if (!CallFilter.shouldKeepVoip(settings.current, notif?.title, final = false)) {
+            Logx.i("Not recording this internet call (filter)")
+            voipSkipped = true
+            return
+        }
         val incoming = (incomingSeen[pkg] ?: 0L) > now - 3 * 60_000
         val direction = when {
             incoming -> CallDirection.INCOMING

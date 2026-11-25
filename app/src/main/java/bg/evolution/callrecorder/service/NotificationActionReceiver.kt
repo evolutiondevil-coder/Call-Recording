@@ -3,6 +3,7 @@ package bg.evolution.callrecorder.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.core.app.RemoteInput
 import bg.evolution.callrecorder.AppGraph
 import kotlinx.coroutines.launch
 
@@ -18,6 +19,22 @@ class NotificationActionReceiver : BroadcastReceiver() {
             ACTION_RESUME -> controller.resume()
             ACTION_CONFIRM -> controller.confirm()
             ACTION_DECLINE -> controller.decline()
+            ACTION_ADD_NOTE -> {
+                val id = intent.getLongExtra(EXTRA_ID, 0)
+                val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(KEY_NOTE)?.toString()?.trim()
+                if (id > 0 && !text.isNullOrEmpty()) {
+                    val pending = goAsync()
+                    graph.scope.launch {
+                        try {
+                            val old = graph.repository.get(id)?.note
+                            graph.repository.setNote(id, if (old.isNullOrBlank()) text else old + "\n" + text)
+                            Notifications.showNoteSaved(context, id, text)
+                        } finally {
+                            pending.finish()
+                        }
+                    }
+                }
+            }
             ACTION_DELETE -> {
                 val id = intent.getLongExtra(EXTRA_ID, 0)
                 if (id > 0) {
@@ -43,6 +60,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val ACTION_DELETE = "bg.evolution.callrecorder.DELETE"
         const val ACTION_CONFIRM = "bg.evolution.callrecorder.CONFIRM"
         const val ACTION_DECLINE = "bg.evolution.callrecorder.DECLINE"
+        const val ACTION_ADD_NOTE = "bg.evolution.callrecorder.ADD_NOTE"
+        const val KEY_NOTE = "note"
         const val EXTRA_ID = "id"
     }
 }

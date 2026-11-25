@@ -12,6 +12,7 @@ import android.content.pm.PackageManager
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import bg.evolution.callrecorder.R
 import bg.evolution.callrecorder.core.CallSource
@@ -213,6 +214,7 @@ object Notifications {
             .setAutoCancel(true)
             .setTimeoutAfter(6 * 60 * 60 * 1000L)
             .setContentIntent(openApp(context, recording.id))
+            .addAction(noteAction(context, recording.id))
             .addAction(0, context.getString(R.string.action_listen), openApp(context, recording.id))
             .addAction(
                 0, context.getString(R.string.action_delete),
@@ -220,6 +222,39 @@ object Notifications {
             )
             .build()
         post(context, id, n)
+    }
+
+    /** "Note" button with an inline text field, so a note can be added right after the call. */
+    private fun noteAction(context: Context, recordingId: Long): NotificationCompat.Action {
+        val input = RemoteInput.Builder(NotificationActionReceiver.KEY_NOTE)
+            .setLabel(context.getString(R.string.note_input_hint))
+            .build()
+        val intent = Intent(context, NotificationActionReceiver::class.java)
+            .setAction(NotificationActionReceiver.ACTION_ADD_NOTE)
+            .putExtra(NotificationActionReceiver.EXTRA_ID, recordingId)
+        // The system fills in the typed text, so this PendingIntent has to be mutable.
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (android.os.Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
+        val pi = PendingIntent.getBroadcast(context, 600 + (recordingId % 500).toInt(), intent, flags)
+        return NotificationCompat.Action.Builder(0, context.getString(R.string.action_add_note), pi)
+            .addRemoteInput(input)
+            .setAllowGeneratedReplies(false)
+            .build()
+    }
+
+    /** Replaces the "saved" notification once a note was typed into it (otherwise it keeps spinning). */
+    fun showNoteSaved(context: Context, recordingId: Long, note: String) {
+        val n = NotificationCompat.Builder(context, CHANNEL_SAVED)
+            .setSmallIcon(R.drawable.ic_stat_saved)
+            .setColor(ContextCompat.getColor(context, R.color.brand_primary))
+            .setContentTitle(context.getString(R.string.notif_saved_title))
+            .setContentText(context.getString(R.string.notif_note_saved, note))
+            .setAutoCancel(true)
+            .setSilent(true)
+            .setTimeoutAfter(10_000)
+            .setContentIntent(openApp(context, recordingId))
+            .build()
+        post(context, ID_SAVED_BASE + (recordingId % 500).toInt(), n)
     }
 
     fun cancelSaved(context: Context, recordingId: Long) {

@@ -16,6 +16,7 @@ import bg.evolution.callrecorder.core.PhoneNumbers
 import bg.evolution.callrecorder.core.Quality
 import bg.evolution.callrecorder.core.RecordFilterMode
 import bg.evolution.callrecorder.core.RecordMode
+import bg.evolution.callrecorder.core.SelectedContact
 import bg.evolution.callrecorder.core.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,6 +41,8 @@ data class AppSettings(
     val gainDb: Int = 6,
     val filterMode: RecordFilterMode = RecordFilterMode.ALL,
     val excludedNumbers: Set<String> = emptySet(),
+    /** "Record only these" list, encoded with [SelectedContact.encode]. */
+    val selectedContacts: Set<String> = emptySet(),
     val minDurationSec: Int = 3,
     val autoDeleteDays: Int = 0,
     val storageTreeUri: String? = null,
@@ -54,6 +57,10 @@ data class AppSettings(
 
     fun isNumberExcluded(number: String?): Boolean =
         number != null && excludedNumbers.any { PhoneNumbers.matches(it, number) }
+
+    val selected: List<SelectedContact> get() = selectedContacts.mapNotNull(SelectedContact::decode)
+
+    fun isSelected(number: String?, name: String?): Boolean = selected.any { it.matches(number, name) }
 }
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -72,6 +79,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
         val gainDb = intPreferencesKey("gain_db")
         val filterMode = stringPreferencesKey("filter_mode")
         val excluded = stringSetPreferencesKey("excluded_numbers")
+        val selected = stringSetPreferencesKey("selected_contacts")
         val minDuration = intPreferencesKey("min_duration")
         val autoDelete = intPreferencesKey("auto_delete_days")
         val treeUri = stringPreferencesKey("tree_uri")
@@ -106,6 +114,7 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
             gainDb = (p[K.gainDb] ?: d.gainDb).coerceIn(0, 18),
             filterMode = enumOr(p[K.filterMode], d.filterMode),
             excludedNumbers = p[K.excluded] ?: d.excludedNumbers,
+            selectedContacts = p[K.selected] ?: d.selectedContacts,
             minDurationSec = p[K.minDuration] ?: d.minDurationSec,
             autoDeleteDays = p[K.autoDelete] ?: d.autoDeleteDays,
             storageTreeUri = p[K.treeUri],
@@ -145,6 +154,15 @@ class SettingsRepository(private val context: Context, scope: CoroutineScope) {
     }
     suspend fun removeExcludedNumber(number: String) = edit {
         it[K.excluded] = (it[K.excluded] ?: emptySet()) - number
+    }
+    suspend fun addSelectedContact(c: SelectedContact) = edit {
+        val current = (it[K.selected] ?: emptySet()).mapNotNull(SelectedContact::decode)
+        if (current.none { old -> old.number != null && old.number == c.number || (old.number == null && c.number == null && old.name == c.name) }) {
+            it[K.selected] = (it[K.selected] ?: emptySet()) + c.encode()
+        }
+    }
+    suspend fun removeSelectedContact(c: SelectedContact) = edit {
+        it[K.selected] = (it[K.selected] ?: emptySet()).filterNot { e -> SelectedContact.decode(e) == c }.toSet()
     }
     suspend fun setMinDuration(v: Int) = edit { it[K.minDuration] = v }
     suspend fun setAutoDeleteDays(v: Int) = edit { it[K.autoDelete] = v }

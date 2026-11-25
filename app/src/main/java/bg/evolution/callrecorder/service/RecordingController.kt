@@ -60,15 +60,27 @@ interface CallRecorderControl {
     fun updateInfo(session: Long, transform: (CallInfo) -> CallInfo)
 }
 
-/** Decides whether a cellular call should be recorded/kept, given what we know about the number. */
+/**
+ * Decides whether a call should be recorded/kept, given what we know about it.
+ * With [final] = false (call start) unknown details give the call the benefit of the doubt;
+ * with [final] = true (after the call, when the call log was read) they don't.
+ */
 object CallFilter {
-    fun shouldKeep(s: AppSettings, number: String?, isContact: Boolean): Boolean {
+    fun shouldKeep(s: AppSettings, number: String?, isContact: Boolean, name: String? = null, final: Boolean = false): Boolean {
         if (s.isNumberExcluded(number)) return false
         return when (s.filterMode) {
             RecordFilterMode.ALL -> true
             RecordFilterMode.CONTACTS_ONLY -> number == null || isContact
             RecordFilterMode.UNKNOWN_ONLY -> !isContact
+            RecordFilterMode.SELECTED_ONLY ->
+                if (number == null && name == null) !final else s.isSelected(number, name)
         }
+    }
+
+    /** Internet calls only have the contact's name (from the call notification). */
+    fun shouldKeepVoip(s: AppSettings, name: String?, final: Boolean): Boolean = when (s.filterMode) {
+        RecordFilterMode.SELECTED_ONLY -> if (name == null) !final else s.isSelected(null, name)
+        else -> true
     }
 }
 
@@ -290,11 +302,17 @@ class RecordingController(
                 if (name == null) name = entry.name
             }
             if (name == null) name = contacts.nameFor(number)
-            if (!CallFilter.shouldKeep(s, number, isContact = name != null)) {
+            if (!CallFilter.shouldKeep(s, number, isContact = name != null, name = name, final = true)) {
                 Logx.i("Call filtered out by settings, discarded")
                 result.file.delete()
                 return
             }
+        }
+
+        if (call.source == CallSource.VOIP && !CallFilter.shouldKeepVoip(s, name, final = true)) {
+            Logx.i("Internet call filtered out by settings, discarded")
+            result.file.delete()
+            return
         }
 
         val appLabel = if (call.source == CallSource.VOIP) VoipApps.label(context, call.appPackage) else null

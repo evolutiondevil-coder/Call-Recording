@@ -1,6 +1,21 @@
 package bg.evolution.callrecorder.ui.settings
 
 import android.os.Build
+import android.content.Intent
+import android.provider.ContactsContract
+import androidx.compose.material.icons.rounded.Contacts
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockClock
+import androidx.compose.material.icons.rounded.Password
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import bg.evolution.callrecorder.security.AppLock
+import bg.evolution.callrecorder.security.Biometrics
+import bg.evolution.callrecorder.ui.lock.PinFlow
+import androidx.compose.material.icons.rounded.HowToReg
+import androidx.compose.material3.FilledTonalButton
+import bg.evolution.callrecorder.core.PhoneNumbers
+import bg.evolution.callrecorder.core.SelectedContact
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.SystemUpdate
@@ -104,8 +119,15 @@ import bg.evolution.callrecorder.core.RecordMode
 import bg.evolution.callrecorder.core.ThemeMode
 
 @Composable
-fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> Unit, onOpenSetup: () -> Unit) {
+fun SettingsScreen(
+    vm: SettingsViewModel,
+    onBack: () -> Unit,
+    onOpenApps: () -> Unit,
+    onOpenSetup: () -> Unit,
+    onOpenPin: (PinFlow) -> Unit,
+) {
     val s by vm.settings.collectAsStateWithLifecycle()
+    val lock by vm.lock.config.collectAsStateWithLifecycle()
     val formats by vm.formats.collectAsStateWithLifecycle()
     val apps by vm.installedApps.collectAsStateWithLifecycle()
     val totalSize by vm.totalSize.collectAsStateWithLifecycle()
@@ -115,10 +137,19 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var dialog by rememberSaveable { mutableStateOf<String?>(null) }
+    val contactPicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        r.data?.data?.let(vm::addSelectedFromPicker)
+    }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) vm.setStorageFolder(uri)
     }
     val voipSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+    // A fingerprint may have been added in the phone's settings meanwhile.
+    var biometricAvailable by remember { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        biometricAvailable = Biometrics.canUseBiometric(context)
+        onPauseOrDispose {}
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scroll.nestedScrollConnection),
@@ -162,6 +193,15 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
                 Group(stringResource(R.string.group_filters)) {
                     ClickItem(Icons.Rounded.People, stringResource(R.string.set_filter_mode), filterLabel(s.filterMode)) { dialog = "filter" }
                     Divider()
+                    if (s.filterMode == RecordFilterMode.SELECTED_ONLY) {
+                        val count = s.selected.size
+                        ClickItem(
+                            Icons.Rounded.HowToReg, stringResource(R.string.set_selected),
+                            if (count == 0) stringResource(R.string.selected_none_warning)
+                            else pluralStringResource(R.plurals.contacts_count, count, count),
+                        ) { dialog = "selected" }
+                        Divider()
+                    }
                     ClickItem(
                         Icons.Rounded.Block, stringResource(R.string.set_excluded),
                         if (s.excludedNumbers.isEmpty()) stringResource(R.string.set_excluded_none)
@@ -199,6 +239,26 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
                     ClickItem(Icons.Rounded.AutoDelete, stringResource(R.string.set_auto_delete), autoDeleteLabel(s.autoDeleteDays)) { dialog = "autodelete" }
                     Divider()
                     InfoItem(Icons.Rounded.SdStorage, stringResource(R.string.set_used_space), Formatters.fileSize(totalSize))
+                }
+            }
+            item {
+                Group(stringResource(R.string.group_security)) {
+                    SwitchItem(
+                        Icons.Rounded.Lock, stringResource(R.string.set_app_lock), stringResource(R.string.set_app_lock_sub),
+                        lock.enabled, onChange = { on -> onOpenPin(if (on) PinFlow.ENABLE else PinFlow.DISABLE) },
+                    )
+                    if (lock.enabled) {
+                        Divider()
+                        SwitchItem(
+                            Icons.Rounded.Fingerprint, stringResource(R.string.set_biometric),
+                            stringResource(if (biometricAvailable) R.string.set_biometric_sub else R.string.set_biometric_unavailable),
+                            lock.biometric && biometricAvailable, enabled = biometricAvailable, onChange = vm.lock::setBiometric,
+                        )
+                        Divider()
+                        ClickItem(Icons.Rounded.LockClock, stringResource(R.string.set_lock_after), lockAfterLabel(lock.timeoutMs)) { dialog = "lockafter" }
+                        Divider()
+                        ClickItem(Icons.Rounded.Password, stringResource(R.string.set_change_pin), null) { onOpenPin(PinFlow.CHANGE) }
+                    }
                 }
             }
             item {
@@ -252,7 +312,9 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
         )
         "filter" -> ChoiceDialog(
             stringResource(R.string.set_filter_mode), RecordFilterMode.entries, s.filterMode, { filterLabel(it) },
-            onSelect = vm::setFilterMode, onDismiss = { dialog = null },
+            description = { if (it == RecordFilterMode.SELECTED_ONLY) stringResource(R.string.filter_mode_selected_desc) else null },
+            onSelect = { m -> vm.setFilterMode(m); if (m == RecordFilterMode.SELECTED_ONLY && s.selected.isEmpty()) dialog = "selected" },
+            onDismiss = { if (dialog == "filter") dialog = null },
         )
         "min" -> ChoiceDialog(
             stringResource(R.string.set_min_duration), listOf(0, 3, 5, 10, 30, 60), s.minDurationSec, { minDurationLabel(it) },
@@ -290,7 +352,19 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
             stringResource(R.string.set_theme), ThemeMode.entries, s.themeMode, { themeLabel(it) },
             onSelect = vm::setTheme, onDismiss = { dialog = null },
         )
+        "lockafter" -> ChoiceDialog(
+            stringResource(R.string.set_lock_after), AppLock.TIMEOUT_OPTIONS, lock.timeoutMs, { lockAfterLabel(it) },
+            header = stringResource(R.string.lock_after_desc),
+            onSelect = vm.lock::setTimeout, onDismiss = { dialog = null },
+        )
         "gain" -> GainDialog(s.gainDb, onSave = vm::setGain, onDismiss = { dialog = null })
+        "selected" -> SelectedDialog(
+            s.selected.sortedBy { (it.name ?: it.number ?: "").lowercase() },
+            onPick = { contactPicker.launch(Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)) },
+            onAddNumber = { vm.addSelected(SelectedContact(PhoneNumbers.normalize(it), null)) },
+            onRemove = vm::removeSelected,
+            onDismiss = { dialog = null },
+        )
         "excluded" -> ExcludedDialog(s.excludedNumbers.sorted(), onAdd = vm::addExcluded, onRemove = vm::removeExcluded, onDismiss = { dialog = null })
         "folder" -> AlertDialog(
             onDismissRequest = { dialog = null },
@@ -355,8 +429,16 @@ private fun filterLabel(m: RecordFilterMode) = stringResource(
         RecordFilterMode.ALL -> R.string.filter_mode_all
         RecordFilterMode.CONTACTS_ONLY -> R.string.filter_mode_contacts
         RecordFilterMode.UNKNOWN_ONLY -> R.string.filter_mode_unknown
+        RecordFilterMode.SELECTED_ONLY -> R.string.filter_mode_selected
     },
 )
+
+@Composable
+private fun lockAfterLabel(ms: Long): String {
+    val minutes = (ms / 60_000).toInt()
+    return if (minutes <= 0) stringResource(R.string.lock_after_immediately)
+    else pluralStringResource(R.plurals.lock_after_minutes, minutes, minutes)
+}
 
 @Composable
 private fun minDurationLabel(sec: Int) =
@@ -536,6 +618,7 @@ fun <T> ChoiceDialog(
     selected: T,
     label: @Composable (T) -> String,
     description: (@Composable (T) -> String?)? = null,
+    header: String? = null,
     onSelect: (T) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -544,6 +627,10 @@ fun <T> ChoiceDialog(
         title = { Text(title) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
+                if (header != null) {
+                    Text(header, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(8.dp))
+                }
                 options.forEach { o ->
                     Row(
                         Modifier
@@ -586,6 +673,63 @@ private fun GainDialog(current: Int, onSave: (Int) -> Unit, onDismiss: () -> Uni
         },
         confirmButton = { TextButton(onClick = { onSave(value.toInt()); onDismiss() }) { Text(stringResource(R.string.action_save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+@Composable
+private fun SelectedDialog(
+    contacts: List<SelectedContact>,
+    onPick: () -> Unit,
+    onAddNumber: (String) -> Unit,
+    onRemove: (SelectedContact) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var input by rememberSaveable { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.HowToReg, null) },
+        title = { Text(stringResource(R.string.set_selected)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.selected_desc), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(12.dp))
+                FilledTonalButton(onClick = onPick, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Rounded.Contacts, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.action_pick_contact), maxLines = 1, softWrap = false)
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = input,
+                        onValueChange = { input = it },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.excluded_hint)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = { onAddNumber(input); input = "" },
+                        enabled = input.count(Char::isDigit) >= 3,
+                    ) { Text(stringResource(R.string.action_add)) }
+                }
+                Spacer(Modifier.height(8.dp))
+                Column(Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    contacts.forEach { c ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(c.name ?: c.number.orEmpty(), style = MaterialTheme.typography.bodyLarge)
+                                if (c.name != null && c.number != null) {
+                                    Text(c.number, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            IconButton(onClick = { onRemove(c) }) { Icon(Icons.Rounded.Close, stringResource(R.string.action_delete)) }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_done)) } },
     )
 }
 

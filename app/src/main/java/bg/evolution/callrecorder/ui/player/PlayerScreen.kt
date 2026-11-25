@@ -54,6 +54,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material.icons.rounded.PhoneInTalk
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -252,6 +256,20 @@ private fun PlayerContent(vm: PlayerViewModel, r: Recording, onBack: () -> Unit)
                         onToggle = vm.player::toggle,
                         onBack10 = { vm.player.skip(-10_000) },
                         onFwd10 = { vm.player.skip(10_000) },
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    FilterChip(
+                        selected = ps.earpiece,
+                        onClick = { vm.player.setEarpiece(!ps.earpiece) },
+                        enabled = !ps.error,
+                        label = { Text(stringResource(R.string.player_earpiece), maxLines = 1, softWrap = false) },
+                        leadingIcon = {
+                            Icon(
+                                if (ps.earpiece) Icons.Rounded.PhoneInTalk else Icons.AutoMirrored.Rounded.VolumeUp,
+                                null, Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
                     )
                     if (ps.error) {
                         Spacer(Modifier.height(12.dp))

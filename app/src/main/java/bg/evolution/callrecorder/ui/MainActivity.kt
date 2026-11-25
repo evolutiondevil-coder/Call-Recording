@@ -2,6 +2,7 @@ package bg.evolution.callrecorder.ui
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,6 +25,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -35,6 +37,9 @@ import androidx.navigation.navArgument
 import bg.evolution.callrecorder.AppGraph
 import bg.evolution.callrecorder.core.AppLocale
 import bg.evolution.callrecorder.ui.home.HomeScreen
+import bg.evolution.callrecorder.ui.lock.AppLockGate
+import bg.evolution.callrecorder.ui.lock.PinFlow
+import bg.evolution.callrecorder.ui.lock.PinFlowScreen
 import bg.evolution.callrecorder.ui.home.HomeViewModel
 import bg.evolution.callrecorder.ui.player.PlayerScreen
 import bg.evolution.callrecorder.ui.player.PlayerViewModel
@@ -44,10 +49,14 @@ import bg.evolution.callrecorder.ui.settings.SettingsViewModel
 import bg.evolution.callrecorder.ui.setup.SetupScreen
 import bg.evolution.callrecorder.ui.theme.CallRecorderTheme
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val openRecording = MutableStateFlow<Long?>(null)
+    /** Set after the PIN was forgotten and the phone's screen lock confirmed: choose a new PIN. */
+    private val pinReset = MutableStateFlow(false)
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLocale.wrap(newBase))
@@ -62,14 +71,41 @@ class MainActivity : ComponentActivity() {
             handleIntent(intent)
             graph.updates.checkOnStart()
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // With the lock on, the list of recent apps shows no picture of the recordings.
+            lifecycleScope.launch {
+                graph.lock.config.map { it.enabled }.distinctUntilChanged().collect { setRecentsScreenshotEnabled(!it) }
+            }
+        }
         setContent {
             val settings by graph.settings.settings.collectAsStateWithLifecycle()
             CallRecorderTheme(settings.themeMode, settings.dynamicColor) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    AppNavigation(graph, settings.onboardingDone, openRecording)
+                    AppLockGate(graph.lock, onPinForgotten = { pinReset.value = true }) {
+                        AppNavigation(graph, settings.onboardingDone, openRecording, pinReset)
+                    }
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        AppGraph.get(this).lock.onShown()
+        super.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) AppGraph.get(this).lock.onHidden()
+    }
+
+    // Every screen the app opens itself (pickers, "save as", sharing, system settings) passes
+    // here, so leaving for it doesn't lock the app at once.
+    @Deprecated("Deprecated in ComponentActivity")
+    @Suppress("DEPRECATION")
+    override fun startActivityForResult(intent: Intent, requestCode: Int, options: Bundle?) {
+        AppGraph.get(this).lock.onOwnScreenLaunch()
+        super.startActivityForResult(intent, requestCode, options)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -94,7 +130,9 @@ private object Routes {
     const val PLAYER = "player/{id}"
     const val SETTINGS = "settings"
     const val APPS = "apps"
+    const val PIN = "pin/{flow}"
     fun player(id: Long) = "player/$id"
+    fun pin(flow: PinFlow) = "pin/${flow.name}"
 }
 
 /** Pops only when the screen is fully shown, so a double tap on "back" can't empty the stack. */
@@ -109,12 +147,24 @@ private fun NavHostController.safeNavigate(route: String) {
 }
 
 @Composable
-private fun AppNavigation(graph: AppGraph, onboardingDone: Boolean, openRecording: MutableStateFlow<Long?>) {
+private fun AppNavigation(
+    graph: AppGraph,
+    onboardingDone: Boolean,
+    openRecording: MutableStateFlow<Long?>,
+    pinReset: MutableStateFlow<Boolean>,
+) {
     val nav = rememberNavController()
     val scope = rememberCoroutineScope()
     val start = remember { if (onboardingDone) Routes.HOME else Routes.ONBOARDING }
     val settings by graph.settings.settings.collectAsStateWithLifecycle()
     val pending by openRecording.collectAsStateWithLifecycle()
+    val resetPin by pinReset.collectAsStateWithLifecycle()
+
+    LaunchedEffect(resetPin) {
+        if (!resetPin) return@LaunchedEffect
+        pinReset.value = false
+        nav.navigate(Routes.pin(PinFlow.RESET)) { launchSingleTop = true }
+    }
 
     LaunchedEffect(pending) {
         val id = pending ?: return@LaunchedEffect
@@ -183,7 +233,12 @@ private fun AppNavigation(graph: AppGraph, onboardingDone: Boolean, openRecordin
                 onBack = nav::safePop,
                 onOpenApps = { nav.safeNavigate(Routes.APPS) },
                 onOpenSetup = { nav.safeNavigate(Routes.SETUP) },
+                onOpenPin = { nav.safeNavigate(Routes.pin(it)) },
             )
+        }
+        composable(Routes.PIN, arguments = listOf(navArgument("flow") { type = NavType.StringType })) { entry ->
+            val flow = entry.arguments?.getString("flow")?.let { f -> PinFlow.entries.firstOrNull { it.name == f } } ?: PinFlow.ENABLE
+            PinFlowScreen(flow, graph.lock, onFinish = nav::safePop)
         }
         composable(Routes.APPS) {
             val vm = viewModel { SettingsViewModel(graph) }

@@ -119,6 +119,7 @@
 
     <!-- Player -->
     <string name="player_error">Този запис не може да бъде възпроизведен. Файлът може да е преместен или изтрит.</string>
+    <string name="player_earpiece">Слушай през слушалката</string>
     <string name="note_title">Бележка</string>
     <string name="note_hint">Добавете бележка към разговора…</string>
     <string name="info_format">Формат</string>
@@ -162,6 +163,15 @@
     <string name="filter_mode_all">Всички</string>
     <string name="filter_mode_contacts">Само контакти</string>
     <string name="filter_mode_unknown">Само непознати номера</string>
+    <string name="filter_mode_selected">Само избрани контакти</string>
+    <string name="filter_mode_selected_desc">Записват се само разговорите с контактите, които изберете.</string>
+    <string name="set_selected">Избрани контакти</string>
+    <string name="selected_none_warning">Няма избрани — нищо няма да се записва</string>
+    <string name="selected_desc">Ще се записват само разговорите с тези контакти. При Viber, WhatsApp и др. се сравнява името на контакта.</string>
+    <string name="action_pick_contact">Избери от контактите</string>
+    <string name="action_add_note">Бележка</string>
+    <string name="note_input_hint">Напишете бележка…</string>
+    <string name="notif_note_saved">Бележката е запазена: %s</string>
     <string name="set_excluded">Изключени номера</string>
     <string name="set_excluded_none">Няма</string>
     <string name="excluded_desc">Разговорите с тези номера никога няма да се записват.</string>
@@ -288,5 +298,47 @@
     <plurals name="older_than_days">
         <item quantity="one">По-стари от %d ден</item>
         <item quantity="other">По-стари от %d дни</item>
+    </plurals>
+    <plurals name="contacts_count">
+        <item quantity="one">%d контакт</item>
+        <item quantity="other">%d контакта</item>
+    </plurals>
+
+    <!-- App lock -->
+    <string name="group_security">Защита</string>
+    <string name="set_app_lock">Заключване с ПИН</string>
+    <string name="set_app_lock_sub">При отваряне приложението иска ПИН</string>
+    <string name="set_biometric">Пръстов отпечатък</string>
+    <string name="set_biometric_sub">Отключване и с пръстов отпечатък или лице</string>
+    <string name="set_biometric_unavailable">Първо добавете пръстов отпечатък в настройките на телефона</string>
+    <string name="set_lock_after">Заключване след</string>
+    <string name="set_change_pin">Смяна на ПИН</string>
+    <string name="lock_after_immediately">Веднага</string>
+    <string name="lock_after_desc">Колко време приложението може да е затворено, преди да поиска ПИН отново.</string>
+    <string name="lock_title">Въведете ПИН</string>
+    <string name="lock_subtitle">Записите ви са защитени</string>
+    <string name="lock_locked_out">Твърде много грешни опити. Опитайте пак след %s.</string>
+    <string name="lock_biometric_title">Отключване на приложението</string>
+    <string name="lock_use_pin">Въведи ПИН</string>
+    <string name="lock_use_fingerprint">Отключване с пръстов отпечатък</string>
+    <string name="lock_forgot">Забравен ПИН?</string>
+    <string name="lock_forgot_title">Потвърдете със заключването на телефона</string>
+    <string name="lock_forgot_unavailable">Без ПИН приложението може да се отключи само със заключването на екрана на телефона, а то не е включено. Включете го в настройките на телефона и опитайте пак.</string>
+    <string name="pin_verify_title">Въведете сегашния ПИН</string>
+    <string name="pin_choose_title">Изберете ПИН</string>
+    <string name="pin_choose_sub">От 4 до 8 цифри</string>
+    <string name="pin_confirm_title">Повторете ПИН</string>
+    <string name="pin_confirm_sub">Въведете същите цифри още веднъж</string>
+    <string name="pin_mismatch">Двата ПИН-а не съвпадат. Опитайте отново.</string>
+    <string name="pin_entered">Въведени цифри: %d</string>
+    <string name="action_continue">Напред</string>
+    <string name="action_backspace">Изтриване на цифра</string>
+    <plurals name="lock_attempts_left">
+        <item quantity="one">Грешен ПИН. Остава %d опит.</item>
+        <item quantity="other">Грешен ПИН. Остават %d опита.</item>
+    </plurals>
+    <plurals name="lock_after_minutes">
+        <item quantity="one">След %d минута</item>
+        <item quantity="other">След %d минути</item>
     </plurals>
 </resources>
