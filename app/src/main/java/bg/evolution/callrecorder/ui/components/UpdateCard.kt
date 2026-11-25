@@ -48,7 +48,7 @@ fun UpdateCard(state: UpdateState, onInstall: () -> Unit, onRetry: () -> Unit, m
         modifier = modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.Top) {
                 Icon(Icons.Rounded.SystemUpdate, null)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
@@ -64,15 +64,6 @@ fun UpdateCard(state: UpdateState, onInstall: () -> Unit, onRetry: () -> Unit, m
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                when (state) {
-                    is UpdateState.ReadyToInstall -> Button(onClick = onInstall) { Text(stringResource(R.string.action_install)) }
-                    is UpdateState.Failed -> Button(
-                        onClick = if (state.reason == UpdateState.Reason.PERMISSION || state.reason == UpdateState.Reason.INSTALL) onInstall else onRetry,
-                    ) {
-                        Text(stringResource(if (state.reason == UpdateState.Reason.PERMISSION) R.string.action_install else R.string.action_retry))
-                    }
-                    else -> Unit
-                }
             }
             if (state is UpdateState.Downloading || state is UpdateState.Installing) {
                 Spacer(Modifier.height(12.dp))
@@ -80,6 +71,22 @@ fun UpdateCard(state: UpdateState, onInstall: () -> Unit, onRetry: () -> Unit, m
                     LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
                 } else {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+            }
+            // The button sits under the text, so the text keeps the full width on narrow screens.
+            val button: Pair<Int, () -> Unit>? = when (state) {
+                is UpdateState.ReadyToInstall -> R.string.action_install to onInstall
+                is UpdateState.Failed -> when (state.reason) {
+                    UpdateState.Reason.PERMISSION -> R.string.action_install to onInstall
+                    UpdateState.Reason.INSTALL -> R.string.action_retry to onInstall
+                    else -> R.string.action_retry to onRetry
+                }
+                else -> null
+            }
+            if (button != null) {
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = button.second, modifier = Modifier.align(Alignment.End)) {
+                    Text(stringResource(button.first), maxLines = 1, softWrap = false)
                 }
             }
         }

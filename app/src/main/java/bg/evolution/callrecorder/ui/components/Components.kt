@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -182,7 +183,13 @@ fun LevelBars(levels: List<Float>, color: Color, modifier: Modifier = Modifier) 
 }
 
 @Composable
-fun EmptyState(icon: ImageVector, title: String, text: String, modifier: Modifier = Modifier) {
+fun EmptyState(
+    icon: ImageVector,
+    title: String,
+    text: String,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
     Column(
         modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -190,7 +197,7 @@ fun EmptyState(icon: ImageVector, title: String, text: String, modifier: Modifie
     ) {
         Box(
             Modifier
-                .size(112.dp)
+                .size(96.dp)
                 .clip(CircleShape)
                 .background(
                     Brush.linearGradient(
@@ -199,17 +206,22 @@ fun EmptyState(icon: ImageVector, title: String, text: String, modifier: Modifie
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(52.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(44.dp))
         }
         Spacer(Modifier.height(24.dp))
         Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(
             text,
-            style = MaterialTheme.typography.bodyMedium,
+            // Centred text looks best with lines of equal length.
+            style = MaterialTheme.typography.bodyMedium.copy(lineBreak = LineBreak.Heading),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (action != null) {
+            Spacer(Modifier.height(24.dp))
+            action()
+        }
     }
 }
 

@@ -73,7 +73,8 @@
     <string name="action_fwd10">Forward 10 seconds</string>
 
     <string name="status_auto_on">Automatic recording is on</string>
-    <string name="status_auto_on_hint">Calls are recorded by themselves</string>
+    <string name="status_auto_on_hint">Every call is recorded automatically</string>
+    <string name="status_auto_ask_hint">Before each call you are asked whether to record it</string>
     <string name="status_auto_off">Automatic recording is off</string>
     <string name="status_auto_off_hint">Turn it on to record your calls</string>
     <string name="status_recording">Recording</string>
@@ -88,12 +89,13 @@
     <string name="duration_s">%d s</string>
     <string name="stat_duration">total time</string>
     <string name="stat_storage">storage used</string>
-    <string name="search_hint">Search by name, number or note</string>
+    <string name="search_hint">Search recordings</string>
     <string name="filter_all">All</string>
     <string name="filter_favorites">Favourites</string>
     <string name="filter_manual">Voice notes</string>
     <string name="empty_title">No recordings yet</string>
-    <string name="empty_text">Your call recordings will appear here. You can also record something right now with the \"Record\" button.</string>
+    <string name="empty_text">Your call recordings will appear here. You can also record a voice note right away.</string>
+    <string name="action_record_note">Record a voice note</string>
     <string name="empty_search_title">Nothing found</string>
     <string name="empty_search_text">Try another word or choose a different filter.</string>
     <string name="day_today">Today</string>
@@ -160,8 +162,8 @@
     <string name="min_duration_none">No limit</string>
     <string name="seconds_short">%d seconds</string>
     <string name="set_format">File format</string>
-    <string name="format_m4a_desc">Recommended. Great sound and small files, plays everywhere.</string>
-    <string name="format_mp3_desc">Most compatible — opens on any device and program.</string>
+    <string name="format_m4a_desc">Recommended. Great sound, small files, plays everywhere.</string>
+    <string name="format_mp3_desc">Most compatible format — opens on any device and in almost any program.</string>
     <string name="format_amrwb_desc">Phone quality (HD Voice), very small files.</string>
     <string name="format_amrnb_desc">Smallest files, classic phone quality.</string>
     <string name="format_wav_desc">Uncompressed — highest quality, but large files.</string>
@@ -226,7 +228,7 @@
     <string name="step_notifications_title">Notification access</string>
     <string name="step_notifications_text">Needed to detect calls in Viber, WhatsApp, Messenger, Telegram and others. Your notifications are not read or stored.</string>
     <string name="step_battery_title">Unrestricted battery</string>
-    <string name="step_battery_text">Prevents battery saving from stopping a recording.</string>
+    <string name="step_battery_text">Keeps battery saving from stopping a recording.</string>
     <string name="restricted_settings_hint">If the switch is greyed out or says \"Restricted setting\": open \"App info\" → the ⋮ menu at the top right → \"Allow restricted settings\", then try again.</string>
     <string name="privacy_text">Free, no ads. Recordings stay on your phone only.</string>
     <string name="setup_start">Go to recordings</string>

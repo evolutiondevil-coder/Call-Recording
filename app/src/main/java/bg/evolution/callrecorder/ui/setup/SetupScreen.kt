@@ -20,6 +20,7 @@ import bg.evolution.callrecorder.ui.settings.recordModeLabel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,6 +66,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -226,7 +228,7 @@ private fun Hero(onboarding: Boolean) {
         Spacer(Modifier.height(8.dp))
         Text(
             stringResource(R.string.setup_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(lineBreak = LineBreak.Heading),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -314,10 +316,13 @@ private fun StepCard(
                     Spacer(Modifier.height(10.dp))
                     Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(14.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Wraps the second button onto its own line on narrow screens instead of squeezing it.
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         FilledTonalButton(onClick = onAction) { Text(action) }
                         if (hint != null && onHint != null) {
-                            Spacer(Modifier.width(4.dp))
                             TextButton(onClick = onHint) { Text(stringResource(R.string.action_app_info)) }
                         }
                     }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import bg.evolution.callrecorder.core.ThemeMode
@@ -114,15 +115,27 @@ val LocalExtraColors = staticCompositionLocalOf {
     ExtraColors(Color.Red, Color.White, Color.Green, Color.Blue, Color.Magenta, Color.Blue, Color.White)
 }
 
+// Headings and short texts break into lines of equal length ("balanced") instead of leaving a
+// single word on the last line; body text uses the high-quality paragraph breaker.
 private val AppTypography = Typography().run {
+    val heading = LineBreak.Heading
+    val body = LineBreak.Paragraph
     copy(
-        displaySmall = displaySmall.copy(fontWeight = FontWeight.SemiBold),
-        headlineLarge = headlineLarge.copy(fontWeight = FontWeight.SemiBold),
-        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.SemiBold),
-        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-        titleLarge = titleLarge.copy(fontWeight = FontWeight.SemiBold),
-        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp),
+        displayLarge = displayLarge.copy(lineBreak = heading),
+        displayMedium = displayMedium.copy(lineBreak = heading),
+        displaySmall = displaySmall.copy(fontWeight = FontWeight.SemiBold, lineBreak = heading),
+        headlineLarge = headlineLarge.copy(fontWeight = FontWeight.SemiBold, lineBreak = heading),
+        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.SemiBold, lineBreak = heading),
+        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.SemiBold, lineBreak = heading),
+        titleLarge = titleLarge.copy(fontWeight = FontWeight.SemiBold, lineBreak = heading),
+        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold, lineBreak = heading),
+        titleSmall = titleSmall.copy(lineBreak = heading),
+        bodyLarge = bodyLarge.copy(lineBreak = body),
+        bodyMedium = bodyMedium.copy(lineBreak = body),
+        bodySmall = bodySmall.copy(lineBreak = body),
+        labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp, lineBreak = heading),
+        labelMedium = labelMedium.copy(lineBreak = heading),
+        labelSmall = labelSmall.copy(lineBreak = heading),
     )
 }
 

@@ -22,7 +22,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,7 +41,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.CallMade
 import androidx.compose.material.icons.automirrored.rounded.CallReceived
@@ -112,8 +116,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bg.evolution.callrecorder.R
@@ -217,6 +223,11 @@ fun HomeScreen(
                     LargeTopAppBar(
                         title = { Text(stringResource(R.string.home_title)) },
                         actions = {
+                            if (rec !is RecorderState.Active) {
+                                IconButton(onClick = startManual) {
+                                    Icon(Icons.Rounded.Mic, stringResource(R.string.action_record_note))
+                                }
+                            }
                             IconButton(onClick = onOpenSettings) {
                                 Icon(Icons.Rounded.Settings, stringResource(R.string.settings_title))
                             }
@@ -227,7 +238,10 @@ fun HomeScreen(
             }
         },
         floatingActionButton = {
-            AnimatedVisibility(!selecting, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
+            // Only a Stop button while recording: a permanent FAB would cover list text.
+            // New voice notes are started from the top bar (and from the empty state).
+            val showFab = !selecting && rec is RecorderState.Active
+            AnimatedVisibility(showFab, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
                 RecordFab(rec, fabExpanded, onStart = startManual, onStop = vm::stopRecording)
             }
         },
@@ -236,7 +250,10 @@ fun HomeScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 104.dp),
+            contentPadding = PaddingValues(
+                top = padding.calculateTopPadding(),
+                bottom = padding.calculateBottomPadding() + if (rec is RecorderState.Active) 104.dp else 24.dp,
+            ),
         ) {
             if (update.isWorthShowing()) {
                 item(key = "update") {
@@ -272,7 +289,20 @@ fun HomeScreen(
                     if (state.hasAnyRecording) {
                         EmptyState(Icons.Rounded.Search, stringResource(R.string.empty_search_title), stringResource(R.string.empty_search_text))
                     } else {
-                        EmptyState(Icons.Rounded.GraphicEq, stringResource(R.string.empty_title), stringResource(R.string.empty_text))
+                        EmptyState(
+                            Icons.Rounded.GraphicEq,
+                            stringResource(R.string.empty_title),
+                            stringResource(R.string.empty_text),
+                            action = if (rec is RecorderState.Active) null else {
+                                {
+                                    FilledTonalButton(onClick = startManual) {
+                                        Icon(Icons.Rounded.Mic, null, Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(stringResource(R.string.action_record_note))
+                                    }
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -324,7 +354,7 @@ private fun RecordFab(rec: RecorderState, expanded: Boolean, onStart: () -> Unit
 // -------------------------------------------------------------------------------------------
 
 @Composable
-private fun StatusCard(
+internal fun StatusCard(
     rec: RecorderState,
     level: StateFlow<Float>,
     recordedMs: () -> Long,
@@ -380,27 +410,18 @@ private fun IdleStatus(settings: AppSettings, onHero: Color, onToggleAuto: (Bool
         }
     }
     Column {
+        // Icon and switch on top, so the title gets the full width and doesn't wrap awkwardly.
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(52.dp).clip(CircleShape).background(onHero.copy(alpha = 0.16f)),
+                Modifier.size(48.dp).clip(CircleShape).background(onHero.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     if (settings.autoRecord) Icons.Rounded.Shield else Icons.Rounded.VoiceOverOff,
-                    null, tint = onHero, modifier = Modifier.size(28.dp),
+                    null, tint = onHero, modifier = Modifier.size(26.dp),
                 )
             }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(if (settings.autoRecord) R.string.status_auto_on else R.string.status_auto_off),
-                    style = MaterialTheme.typography.titleMedium, color = onHero,
-                )
-                Text(
-                    stringResource(if (settings.autoRecord) R.string.status_auto_on_hint else R.string.status_auto_off_hint),
-                    style = MaterialTheme.typography.bodySmall, color = onHero.copy(alpha = 0.8f),
-                )
-            }
+            Spacer(Modifier.weight(1f))
             Switch(
                 checked = settings.autoRecord,
                 onCheckedChange = onToggleAuto,
@@ -414,19 +435,35 @@ private fun IdleStatus(settings: AppSettings, onHero: Color, onToggleAuto: (Bool
                 ),
             )
         }
+        Spacer(Modifier.height(14.dp))
+        Text(
+            stringResource(if (settings.autoRecord) R.string.status_auto_on else R.string.status_auto_off),
+            style = MaterialTheme.typography.titleLarge, color = onHero,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            stringResource(
+                when {
+                    !settings.autoRecord -> R.string.status_auto_off_hint
+                    settings.recordMode == RecordMode.ASK -> R.string.status_auto_ask_hint
+                    else -> R.string.status_auto_on_hint
+                },
+            ),
+            style = MaterialTheme.typography.bodyMedium.copy(lineBreak = LineBreak.Heading),
+            color = onHero.copy(alpha = 0.85f),
+        )
         if (settings.autoRecord && summary.isNotEmpty()) {
             Spacer(Modifier.height(14.dp))
-            val shown = summary.take(4)
+            val shown = summary.take(8)
             val more = summary.size - shown.size
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Wraps onto a new line instead of cutting off names like "Facebook".
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 shown.forEach { HeroChip(it, onHero) }
                 if (more > 0) HeroChip("+$more", onHero)
             }
-            Spacer(Modifier.height(8.dp))
-            HeroChip(
-                stringResource(if (settings.recordMode == RecordMode.ASK) R.string.mode_ask_short else R.string.mode_always_short),
-                onHero,
-            )
         }
     }
 }
@@ -524,46 +561,75 @@ private fun ActiveStatus(
                 color = onHero.copy(alpha = 0.85f),
             )
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FilledTonalButton(
-                    onClick = onDecline,
-                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = onHero.copy(alpha = 0.18f), contentColor = onHero),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(Icons.Rounded.Close, null, Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.action_dont_record))
-                }
-                Button(
-                    onClick = onConfirm,
-                    colors = ButtonDefaults.buttonColors(containerColor = extra.record, contentColor = extra.onRecord),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(Icons.Rounded.FiberManualRecord, null, Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.action_record))
-                }
-            }
+            HeroButtons(
+                onHero = onHero,
+                secondaryIcon = Icons.Rounded.Close,
+                secondaryText = stringResource(R.string.action_dont_record),
+                onSecondary = onDecline,
+                primaryIcon = Icons.Rounded.FiberManualRecord,
+                primaryText = stringResource(R.string.action_record),
+                onPrimary = onConfirm,
+            )
             return@Column
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        HeroButtons(
+            onHero = onHero,
+            secondaryIcon = if (active.paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause,
+            secondaryText = stringResource(if (active.paused) R.string.action_resume else R.string.action_pause),
+            onSecondary = if (active.paused) onResume else onPause,
+            primaryIcon = Icons.Rounded.Stop,
+            primaryText = stringResource(R.string.action_stop_save),
+            onPrimary = onStop,
+        )
+    }
+}
+
+/**
+ * Two buttons side by side, or stacked when the card is too narrow for both labels:
+ * labels are never wrapped or cut in the middle of a word.
+ */
+@Composable
+private fun HeroButtons(
+    onHero: Color,
+    secondaryIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    secondaryText: String,
+    onSecondary: () -> Unit,
+    primaryIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    primaryText: String,
+    onPrimary: () -> Unit,
+) {
+    val extra = LocalExtraColors.current
+    @Composable
+    fun Label(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+        Icon(icon, null, Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(text, maxLines = 1, softWrap = false)
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val sideBySide = maxWidth >= 320.dp
+        val secondary: @Composable (Modifier) -> Unit = { m ->
             FilledTonalButton(
-                onClick = if (active.paused) onResume else onPause,
+                onClick = onSecondary,
                 colors = ButtonDefaults.filledTonalButtonColors(containerColor = onHero.copy(alpha = 0.18f), contentColor = onHero),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(if (active.paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause, null, Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(if (active.paused) R.string.action_resume else R.string.action_pause))
-            }
+                modifier = m,
+            ) { Label(secondaryIcon, secondaryText) }
+        }
+        val primary: @Composable (Modifier) -> Unit = { m ->
             Button(
-                onClick = onStop,
+                onClick = onPrimary,
                 colors = ButtonDefaults.buttonColors(containerColor = extra.record, contentColor = extra.onRecord),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Rounded.Stop, null, Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.action_stop_save))
+                modifier = m,
+            ) { Label(primaryIcon, primaryText) }
+        }
+        if (sideBySide) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                secondary(Modifier.weight(1f))
+                primary(Modifier.weight(1f))
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                primary(Modifier.fillMaxWidth())
+                secondary(Modifier.fillMaxWidth())
             }
         }
     }
@@ -632,7 +698,14 @@ private fun StatTile(icon: androidx.compose.ui.graphics.vector.ImageVector, valu
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.height(8.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // Long values ("12 ч 45 мин") shrink to fit the tile instead of being cut off.
+            BasicText(
+                value,
+                style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                maxLines = 1,
+                softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 11.sp, maxFontSize = MaterialTheme.typography.titleMedium.fontSize),
+            )
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
@@ -650,7 +723,13 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
             Spacer(Modifier.width(12.dp))
             Box(Modifier.weight(1f)) {
                 if (query.isEmpty()) {
-                    Text(stringResource(R.string.search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        stringResource(R.string.search_hint),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 BasicTextField(
                     value = query,

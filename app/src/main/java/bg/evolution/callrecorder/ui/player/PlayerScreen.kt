@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -222,8 +223,21 @@ private fun PlayerContent(vm: PlayerViewModel, r: Recording, onBack: () -> Unit)
                         modifier = Modifier.fillMaxWidth().height(88.dp),
                     )
                     Spacer(Modifier.height(10.dp))
-                    Row(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(Formatters.position(ps.positionMs), style = MaterialTheme.typography.labelLarge.copy(fontFamily = FontFamily.Monospace))
+                        Spacer(Modifier.weight(1f))
+                        // Playback speed sits between the times, so the controls below have room on small phones.
+                        TextButton(
+                            onClick = {
+                                val i = speeds.indexOf(ps.speed)
+                                vm.player.setSpeed(speeds[(i + 1) % speeds.size])
+                            },
+                            enabled = !ps.error,
+                        ) {
+                            Icon(Icons.Rounded.Speed, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(formatSpeed(ps.speed), maxLines = 1, softWrap = false)
+                        }
                         Spacer(Modifier.weight(1f))
                         Text(
                             Formatters.position(ps.durationMs),
@@ -234,15 +248,10 @@ private fun PlayerContent(vm: PlayerViewModel, r: Recording, onBack: () -> Unit)
                     Spacer(Modifier.height(18.dp))
                     Controls(
                         playing = ps.playing,
-                        speed = ps.speed,
                         enabled = !ps.error,
                         onToggle = vm.player::toggle,
                         onBack10 = { vm.player.skip(-10_000) },
                         onFwd10 = { vm.player.skip(10_000) },
-                        onSpeed = {
-                            val i = speeds.indexOf(ps.speed)
-                            vm.player.setSpeed(speeds[(i + 1) % speeds.size])
-                        },
                     )
                     if (ps.error) {
                         Spacer(Modifier.height(12.dp))
@@ -348,7 +357,10 @@ private fun Header(r: Recording) {
         CallSource.VOIP -> VoipApps.label(context, r.appPackage) ?: stringResource(R.string.source_voip)
         CallSource.MANUAL -> null
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         Pill(directionText)
         if (sourceText != null) Pill(sourceText)
     }
@@ -361,19 +373,16 @@ private fun Header(r: Recording) {
 @Composable
 private fun Controls(
     playing: Boolean,
-    speed: Float,
     enabled: Boolean,
     onToggle: () -> Unit,
     onBack10: () -> Unit,
     onFwd10: () -> Unit,
-    onSpeed: () -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-        TextButton(onClick = onSpeed, enabled = enabled) {
-            Icon(Icons.Rounded.Speed, null, Modifier.size(18.dp))
-            Spacer(Modifier.width(4.dp))
-            Text(formatSpeed(speed))
-        }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         FilledTonalIconButton(onClick = onBack10, enabled = enabled, modifier = Modifier.size(52.dp)) {
             Icon(Icons.Rounded.Replay10, stringResource(R.string.action_back10))
         }
@@ -394,7 +403,6 @@ private fun Controls(
         FilledTonalIconButton(onClick = onFwd10, enabled = enabled, modifier = Modifier.size(52.dp)) {
             Icon(Icons.Rounded.Forward10, stringResource(R.string.action_fwd10))
         }
-        Spacer(Modifier.width(64.dp))
     }
 }
 

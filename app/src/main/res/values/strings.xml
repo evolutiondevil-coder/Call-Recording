@@ -9,14 +9,14 @@
 
     <!-- System services -->
     <string name="accessibility_service_label">Запис на разговори</string>
-    <string name="accessibility_service_description">Позволява на приложението да записва микрофона по време на разговор (изисква се от Android 10 нататък) и да разпознава от кое приложение е разговорът. Услугата не чете съдържанието на екрана ви и не събира данни.</string>
+    <string name="accessibility_service_description">Позволява на приложението да записва звука от микрофона по време на разговор (изисква се от Android 10 нататък) и да разпознава от кое приложение е разговорът. Услугата не чете съдържанието на екрана ви и не събира данни.</string>
     <string name="notification_listener_label">Разпознаване на интернет разговори</string>
 
     <!-- Notification channels -->
     <string name="channel_recording">Текущ запис</string>
     <string name="channel_recording_desc">Показва се, докато тече запис на разговор.</string>
     <string name="channel_saved">Запазени записи</string>
-    <string name="channel_saved_desc">Известие след всеки разговор, с бутони за слушане и изтриване.</string>
+    <string name="channel_saved_desc">Известие след всеки разговор с бутони за слушане и изтриване.</string>
     <string name="channel_problems">Проблеми</string>
     <string name="channel_problems_desc">Предупреждения, когато разговор не може да бъде записан.</string>
     <string name="channel_ask">Въпрос преди запис</string>
@@ -28,15 +28,15 @@
     <string name="notif_recording_call">Разговор</string>
     <string name="notif_saved_title">Записът е запазен</string>
     <string name="notif_ask_title">Да запиша ли разговора?</string>
-    <string name="notif_ask_hint">Записът е започнал от началото на разговора, но ще бъде запазен само ако натиснете „Запиши“.</string>
+    <string name="notif_ask_hint">Записът започна от самото начало на разговора, но ще бъде запазен само ако натиснете „Запиши“.</string>
     <string name="problem_mic_title">Няма разрешение за микрофона</string>
     <string name="problem_mic_text">Разговорът не беше записан. Отворете приложението и разрешете достъп до микрофона.</string>
     <string name="problem_start_title">Записът не стартира</string>
-    <string name="problem_start_text">Микрофонът е зает или недостъпен. Проверете дали услугата за достъпност е включена и опитайте друг аудио източник в настройките.</string>
+    <string name="problem_start_text">Микрофонът е зает или недостъпен. Проверете дали услугата за достъпност е включена и опитайте друг аудиоизточник в настройките.</string>
     <string name="problem_save_title">Записът не беше запазен</string>
     <string name="problem_save_text">Файлът не можа да бъде записан. Проверете свободното място и избраната папка.</string>
     <string name="problem_silent_title">Записът е без звук</string>
-    <string name="problem_silent_text">Системата не позволи достъп до звука по време на разговора. Включете услугата за достъпност на приложението или изберете друг аудио източник в настройките.</string>
+    <string name="problem_silent_text">Системата не позволи достъп до звука по време на разговора. Включете услугата за достъпност на приложението или изберете друг аудиоизточник в настройките.</string>
 
     <!-- Actions -->
     <string name="action_stop">Спри</string>
@@ -78,7 +78,8 @@
 
     <!-- Home -->
     <string name="status_auto_on">Автоматичният запис е включен</string>
-    <string name="status_auto_on_hint">Разговорите се записват сами</string>
+    <string name="status_auto_on_hint">Всеки разговор се записва автоматично</string>
+    <string name="status_auto_ask_hint">Преди всеки разговор ще ви пита дали да го запише</string>
     <string name="status_auto_off">Автоматичният запис е изключен</string>
     <string name="status_auto_off_hint">Включете го, за да се записват разговорите</string>
     <string name="status_recording">Записва се</string>
@@ -93,12 +94,13 @@
     <string name="duration_s">%d сек</string>
     <string name="stat_duration">общо време</string>
     <string name="stat_storage">заето място</string>
-    <string name="search_hint">Търсене по име, номер или бележка</string>
+    <string name="search_hint">Търсене в записите</string>
     <string name="filter_all">Всички</string>
     <string name="filter_favorites">Любими</string>
     <string name="filter_manual">Гласови бележки</string>
     <string name="empty_title">Все още няма записи</string>
-    <string name="empty_text">Записите на разговорите ще се появят тук. Можете и да запишете нещо веднага с бутона „Запиши“.</string>
+    <string name="empty_text">Записите на разговорите ще се появят тук. Можете и веднага да запишете гласова бележка.</string>
+    <string name="action_record_note">Запиши гласова бележка</string>
     <string name="empty_search_title">Нищо не е намерено</string>
     <string name="empty_search_text">Опитайте с друга дума или изберете друг филтър.</string>
     <string name="day_today">Днес</string>
@@ -123,9 +125,9 @@
     <string name="info_duration">Продължителност</string>
     <string name="info_size">Размер</string>
     <string name="info_file">Файл</string>
-    <string name="delete_title">Изтриване на записа?</string>
+    <string name="delete_title">Да се изтрие ли записът?</string>
     <string name="delete_text">Записът ще бъде изтрит завинаги от устройството.</string>
-    <string name="exclude_title">Без запис за този номер?</string>
+    <string name="exclude_title">Да не се записва ли този номер?</string>
     <string name="exclude_text">Разговорите с %s повече няма да се записват. Можете да промените това в Настройки → Изключени номера.</string>
     <string name="rename_title">Име на записа</string>
     <string name="rename_label">Име на събеседника</string>
@@ -141,7 +143,7 @@
     <string name="group_appearance">Външен вид</string>
     <string name="group_other">Други</string>
     <string name="set_auto_record">Автоматичен запис</string>
-    <string name="set_auto_record_sub">Записване на разговорите без да натискате нищо</string>
+    <string name="set_auto_record_sub">Записване на разговорите, без да натискате нищо</string>
     <string name="set_record_mode">Режим на запис</string>
     <string name="mode_always">Записвай всичко</string>
     <string name="mode_always_desc">Всеки разговор се записва автоматично. Ненужните записи изтривате после — от списъка (плъзнете наляво) или с бутона „Изтрий“ в известието след разговора.</string>
@@ -168,8 +170,8 @@
     <string name="min_duration_none">Без ограничение</string>
     <string name="seconds_short">%d секунди</string>
     <string name="set_format">Формат на файла</string>
-    <string name="format_m4a_desc">Препоръчително. Отличен звук и малки файлове, работи навсякъде.</string>
-    <string name="format_mp3_desc">Най-съвместим — отваря се на всяко устройство и програма.</string>
+    <string name="format_m4a_desc">Препоръчва се. Отличен звук, малки файлове, работи навсякъде.</string>
+    <string name="format_mp3_desc">Най-съвместимият формат — отваря се на всяко устройство и в почти всяка програма.</string>
     <string name="format_amrwb_desc">Телефонно качество (HD Voice), много малки файлове.</string>
     <string name="format_amrnb_desc">Най-малките файлове, класическо телефонно качество.</string>
     <string name="format_wav_desc">Без компресия — най-високо качество, но големи файлове.</string>
@@ -180,15 +182,15 @@
     <string name="set_gain">Усилване на звука</string>
     <string name="gain_off">Без усилване</string>
     <string name="gain_desc">Прави тихите записи по-силни. Вграденият ограничител предпазва от изкривяване.</string>
-    <string name="set_source">Аудио източник</string>
+    <string name="set_source">Аудиоизточник</string>
     <string name="source_auto">Автоматично</string>
-    <string name="source_auto_desc">Препоръчително. Избира най-добрия източник за устройството и превключва сам, ако някой не работи.</string>
+    <string name="source_auto_desc">Препоръчва се. Избира най-добрия източник за устройството и превключва сам, ако някой не работи.</string>
     <string name="source_voice_recognition">Гласово разпознаване</string>
     <string name="source_mic">Микрофон</string>
     <string name="source_voice_communication">Гласова комуникация</string>
     <string name="source_voice_call">Линия на разговора</string>
     <string name="source_voice_call_desc">Записва и двете страни директно, но работи само на някои телефони (обикновено до Android 9).</string>
-    <string name="source_camcorder">Камера (микрофон)</string>
+    <string name="source_camcorder">Микрофон на камерата</string>
     <string name="set_folder">Папка за записите</string>
     <string name="set_folder_internal">Паметта на приложението</string>
     <string name="folder_dialog_text">Новите записи ще се запазват в избраната от вас папка, където са видими и за други приложения (файлов мениджър, плейъри).</string>
@@ -210,7 +212,7 @@
     <string name="set_about">За приложението</string>
     <string name="set_about_sub">Версия %s · безплатно, без реклами</string>
     <string name="about_text">Версия %s\n\nНапълно безплатно, без реклами и без проследяване. Записите остават само на вашето устройство. Интернет се използва единствено за проверка за нова версия в GitHub.</string>
-    <string name="legal_text">Записването на разговори може да е ограничено от закона. В България и ЕС трябва да уведомите събеседника си и да използвате записите само законно. Вие носите отговорност за начина, по който използвате приложението.</string>
+    <string name="legal_text">Записването на разговори може да е ограничено от закона. В България и ЕС трябва да уведомите събеседника си и да използвате записите само законосъобразно. Вие носите отговорност за начина, по който използвате приложението.</string>
 
     <!-- Apps -->
     <string name="apps_title">Приложения</string>
@@ -224,19 +226,19 @@
     <!-- Setup -->
     <string name="setup_welcome">Добре дошли!</string>
     <string name="setup_title">Разрешения и настройка</string>
-    <string name="setup_subtitle">Няколко бързи стъпки и всеки разговор ще бъде записан — телефонен, Viber, WhatsApp, Messenger и още.</string>
+    <string name="setup_subtitle">Няколко бързи стъпки и всеки разговор ще се записва — по телефона, във Viber, WhatsApp, Messenger и други.</string>
     <string name="step_required">Стъпка %d · задължително</string>
     <string name="step_recommended">Стъпка %d · препоръчително</string>
     <string name="step_done">Готово ✓</string>
     <string name="step_permissions_title">Микрофон, телефон и контакти</string>
     <string name="step_permissions_text">Нужни са, за да се записва звукът, да се разпознава кога започва разговор и да се показват имената на събеседниците.</string>
     <string name="step_accessibility_title">Услуга за достъпност</string>
-    <string name="step_accessibility_text">От Android 10 нататък само така е позволено записване по време на разговор. Отворете „Запис на разговори“ в списъка и го включете. Приложението не чете съдържанието на екрана.</string>
+    <string name="step_accessibility_text">От Android 10 нататък това е единственият позволен начин за запис по време на разговор. Отворете „Запис на разговори“ в списъка и го включете. Приложението не чете съдържанието на екрана.</string>
     <string name="step_accessibility_text_old">Подобрява надеждността на записа и разпознаването на интернет разговорите.</string>
     <string name="step_notifications_title">Достъп до известията</string>
     <string name="step_notifications_text">Нужен е, за да се разпознават разговорите във Viber, WhatsApp, Messenger, Telegram и др. Известията ви не се четат и не се пазят.</string>
     <string name="step_battery_title">Без ограничение на батерията</string>
-    <string name="step_battery_text">Предпазва записа от спиране от системата за пестене на батерия.</string>
+    <string name="step_battery_text">Така режимът за пестене на батерия няма да спира записа.</string>
     <string name="restricted_settings_hint">Ако бутонът е сив или пише „Ограничена настройка“: отворете „Информация за приложението“ → менюто ⋮ горе вдясно → „Разрешаване на ограничени настройки“ и опитайте отново.</string>
     <string name="privacy_text">Безплатно, без реклами. Записите остават само на телефона ви.</string>
     <string name="setup_start">Към записите</string>
@@ -248,10 +250,10 @@
     <string name="notif_updated_text">Инсталирана е версия %s.</string>
     <string name="update_available">Нова версия %s</string>
     <string name="update_downloading">Изтегля се… %d%%</string>
-    <string name="update_ready">Изтеглена е и е готова за инсталиране</string>
+    <string name="update_ready">Готова е за инсталиране</string>
     <string name="update_installing">Инсталира се…</string>
     <string name="update_failed_network">Изтеглянето не успя. Проверете интернета.</string>
-    <string name="update_failed_install">Инсталирането не успя. Опитайте отново или я свалете от GitHub.</string>
+    <string name="update_failed_install">Инсталирането не успя. Опитайте отново или свалете новата версия от GitHub.</string>
     <string name="update_failed_signature">Изтегленият файл не е от това приложение и беше изтрит.</string>
     <string name="update_failed_permission">Разрешете „Инсталиране на непознати приложения“ за „Запис на разговори“ и натиснете „Инсталирай“ отново.</string>
     <string name="update_not_found">Няма публикувани версии в GitHub (или хранилището е частно).</string>
