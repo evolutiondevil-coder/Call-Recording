@@ -1,7 +1,9 @@
 package bg.evolution.callrecorder.data
 
 import android.media.MediaMetadataRetriever
+import bg.evolution.callrecorder.audio.Trimmer
 import bg.evolution.callrecorder.audio.WavEncoder
+import bg.evolution.callrecorder.core.FileNames
 import bg.evolution.callrecorder.core.AudioFormat
 import bg.evolution.callrecorder.core.CallSource
 import bg.evolution.callrecorder.core.Logx
@@ -35,6 +37,48 @@ class RecordingRepository(
         val removed = rows.filter { storage.delete(it.uri) }.map { it.id }
         dao.delete(removed)
         removed.size
+    }
+
+    /**
+     * Keeps only [startMs]..[endMs] of a recording ([totalMs] long), without re-encoding.
+     * With [replace] the original file is overwritten; otherwise the part becomes a new recording
+     * next to it, named after the original plus [nameSuffix]. Returns the id of the result.
+     */
+    suspend fun trim(
+        r: Recording,
+        startMs: Long,
+        endMs: Long,
+        totalMs: Long,
+        replace: Boolean,
+        treeUri: String?,
+        nameSuffix: String,
+    ): Long = withContext(Dispatchers.IO) {
+        val (source, sourceIsCopy) = storage.localFile(r.uri, r.format)
+        val out = storage.cacheFile(r.format)
+        try {
+            val duration = Trimmer.trim(source, out, r.format, startMs, endMs)
+            val waveform = Trimmer.sliceWaveform(r.waveform, totalMs, startMs, endMs)
+            val size = out.length()
+            if (replace) {
+                storage.overwrite(r.uri, out)
+                dao.update(r.copy(durationMs = duration, sizeBytes = size, waveform = waveform))
+                r.id
+            } else {
+                val base = r.fileName.substringBeforeLast('.')
+                val name = FileNames.sanitize("$base ($nameSuffix)", maxLength = 110) + "." + r.format.extension
+                val stored = storage.commit(out, name, r.format, treeUri)
+                dao.insert(
+                    r.copy(
+                        id = 0, uri = stored.uri.toString(), fileName = stored.fileName, sizeBytes = stored.sizeBytes,
+                        durationMs = duration, waveform = waveform, startedAt = r.startedAt + startMs,
+                        favorite = false, listened = true, silent = false,
+                    ),
+                )
+            }
+        } finally {
+            out.delete()
+            if (sourceIsCopy) source.delete()
+        }
     }
 
     /** Applies the "delete recordings older than N days" setting. Favorites are always kept. */

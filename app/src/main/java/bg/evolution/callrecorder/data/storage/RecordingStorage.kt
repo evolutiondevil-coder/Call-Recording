@@ -141,6 +141,52 @@ class RecordingStorage(private val context: Context) {
         false
     }
 
+    /** A scratch file in the cache, e.g. for the result of trimming. */
+    fun cacheFile(format: AudioFormat): File =
+        File(context.cacheDir, "work-${System.nanoTime()}.${format.extension}")
+
+    /**
+     * A local file with the recording's audio: the file itself in app storage, or a copy in the
+     * cache for a recording in a chosen folder (then the second value is true: delete it after use).
+     */
+    fun localFile(uriString: String, format: AudioFormat): Pair<File, Boolean> {
+        val uri = Uri.parse(uriString)
+        if (uri.scheme == "file") return File(requireNotNull(uri.path)) to false
+        val copy = cacheFile(format)
+        try {
+            context.contentResolver.openInputStream(uri).use { input ->
+                requireNotNull(input) { "Cannot open $uriString" }
+                copy.outputStream().use { input.copyTo(it, 256 * 1024) }
+            }
+        } catch (e: Exception) {
+            copy.delete()
+            throw e
+        }
+        return copy to true
+    }
+
+    /** Puts the content of [from] in place of the recording at [uriString]; [from] is used up. */
+    fun overwrite(uriString: String, from: File) {
+        val uri = Uri.parse(uriString)
+        if (uri.scheme == "file") {
+            val target = File(requireNotNull(uri.path))
+            // Renaming replaces the old file in one step, so it is never left half written.
+            if (!from.renameTo(target)) {
+                from.copyTo(target, overwrite = true)
+                from.delete()
+            }
+            return
+        }
+        try {
+            context.contentResolver.openOutputStream(uri, "wt").use { out ->
+                requireNotNull(out) { "Cannot write $uriString" }
+                from.inputStream().use { it.copyTo(out, 256 * 1024) }
+            }
+        } finally {
+            from.delete()
+        }
+    }
+
     fun hasTreePermission(treeUri: String?): Boolean {
         if (treeUri == null) return false
         return context.contentResolver.persistedUriPermissions.any {

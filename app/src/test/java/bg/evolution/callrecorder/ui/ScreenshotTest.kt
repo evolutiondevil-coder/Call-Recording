@@ -35,6 +35,7 @@ import bg.evolution.callrecorder.ui.lock.PinCheckScreen
 import bg.evolution.callrecorder.ui.lock.PinSetupScreen
 import bg.evolution.callrecorder.ui.player.PlayerScreen
 import bg.evolution.callrecorder.ui.player.PlayerViewModel
+import bg.evolution.callrecorder.ui.player.TrimContent
 import bg.evolution.callrecorder.ui.settings.AppsScreen
 import bg.evolution.callrecorder.ui.settings.SettingsScreen
 import bg.evolution.callrecorder.ui.settings.SettingsViewModel
@@ -244,5 +245,26 @@ class ScreenshotTest {
     fun settingsWithLock() = withLock {
         val vm = SettingsViewModel(graph)
         shot("15-settings-lock-tall") { SettingsScreen(vm, {}, {}, {}, {}) }
+    }
+
+    // ---- trimming ----------------------------------------------------------------------------
+
+    @Test @Config(qualifiers = NARROW)
+    fun trimNarrow() {
+        val id = seed()
+        val vm = PlayerViewModel(graph, id)
+        val r = runBlocking { graph.repository.get(id)!! }
+        shot("16-trim-narrow") {
+            Column(Modifier.statusBarsPadding().padding(top = 24.dp)) { TrimContent(vm, r) }
+        }
+    }
+
+    @Test fun trimDark() {
+        val id = seed()
+        val vm = PlayerViewModel(graph, id)
+        val r = runBlocking { graph.repository.get(id)!! }
+        shot("17-trim-dark", dark = true) {
+            Column(Modifier.statusBarsPadding().padding(top = 24.dp)) { TrimContent(vm, r) }
+        }
     }
 }

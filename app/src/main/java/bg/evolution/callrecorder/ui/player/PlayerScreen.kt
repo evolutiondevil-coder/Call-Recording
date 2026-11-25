@@ -94,7 +94,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bg.evolution.callrecorder.R
+import bg.evolution.callrecorder.audio.Trimmer
 import bg.evolution.callrecorder.audio.WaveformBuilder
+import androidx.compose.material.icons.rounded.ContentCut
 import bg.evolution.callrecorder.core.CallDirection
 import bg.evolution.callrecorder.core.CallSource
 import bg.evolution.callrecorder.core.Formatters
@@ -112,7 +114,7 @@ import java.util.Locale
 private val speeds = listOf(1f, 1.25f, 1.5f, 2f, 0.75f)
 
 @Composable
-fun PlayerScreen(vm: PlayerViewModel, onBack: () -> Unit) {
+fun PlayerScreen(vm: PlayerViewModel, onOpenRecording: (Long) -> Unit = {}, onBack: () -> Unit) {
     val load by vm.load.collectAsStateWithLifecycle()
     var closed by remember { mutableStateOf(false) }
     LaunchedEffect(load) {
@@ -126,14 +128,25 @@ fun PlayerScreen(vm: PlayerViewModel, onBack: () -> Unit) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         return
     }
-    PlayerContent(vm, r, onBack)
+    PlayerContent(vm, r, onOpenRecording, onBack)
 }
 
 @Composable
-private fun PlayerContent(vm: PlayerViewModel, r: Recording, onBack: () -> Unit) {
+private fun PlayerContent(vm: PlayerViewModel, r: Recording, onOpenRecording: (Long) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val ps by vm.player.state.collectAsStateWithLifecycle()
+    val trimState by vm.trimState.collectAsStateWithLifecycle()
     var menu by remember { mutableStateOf(false) }
+    var trimming by rememberSaveable { mutableStateOf(false) }
+    val trimmedNew = stringResource(R.string.trim_saved_new)
+    val trimmedReplaced = stringResource(R.string.trim_replaced)
+    LaunchedEffect(trimState) {
+        val done = trimState as? PlayerViewModel.TrimState.Done ?: return@LaunchedEffect
+        trimming = false
+        vm.trimHandled()
+        Toast.makeText(context, if (done.replaced) trimmedReplaced else trimmedNew, Toast.LENGTH_SHORT).show()
+        if (!done.replaced) onOpenRecording(done.id)
+    }
     var confirmDelete by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
     var excluding by remember { mutableStateOf(false) }
@@ -169,6 +182,12 @@ private fun PlayerContent(vm: PlayerViewModel, r: Recording, onBack: () -> Unit)
                                 text = { Text(stringResource(R.string.action_rename)) },
                                 leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                                 onClick = { menu = false; renaming = true },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_trim)) },
+                                leadingIcon = { Icon(Icons.Rounded.ContentCut, null) },
+                                enabled = !ps.error && ps.durationMs > Trimmer.MIN_LENGTH_MS,
+                                onClick = { menu = false; vm.trimHandled(); trimming = true },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_save_as)) },
@@ -303,6 +322,7 @@ private fun PlayerContent(vm: PlayerViewModel, r: Recording, onBack: () -> Unit)
         }
     }
 
+    if (trimming) TrimSheet(vm, r, onDismiss = { trimming = false })
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },

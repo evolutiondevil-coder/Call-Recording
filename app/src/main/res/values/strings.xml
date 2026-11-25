@@ -341,4 +341,23 @@
         <item quantity="one">След %d минута</item>
         <item quantity="other">След %d минути</item>
     </plurals>
+
+    <!-- Trimming -->
+    <string name="action_trim">Изрязване</string>
+    <string name="trim_title">Изрязване на запис</string>
+    <string name="trim_hint">Плъзнете двата края, за да изберете частта, която да остане. Звукът не губи качество.</string>
+    <string name="trim_start">Начало</string>
+    <string name="trim_end">Край</string>
+    <string name="trim_kept">Остава %s</string>
+    <string name="trim_set_start">Начало тук</string>
+    <string name="trim_set_end">Край тук</string>
+    <string name="trim_preview">Прослушай избраното</string>
+    <string name="trim_save_new">Запази като нов запис</string>
+    <string name="trim_replace">Замени оригинала</string>
+    <string name="trim_replace_title">Да се замени ли оригиналът?</string>
+    <string name="trim_replace_text">Частите извън избраното ще бъдат изтрити завинаги.</string>
+    <string name="trim_saved_new">Избраната част е запазена като нов запис</string>
+    <string name="trim_replaced">Записът е изрязан</string>
+    <string name="trim_failed">Записът не можа да бъде изрязан. Опитайте отново.</string>
+    <string name="trim_file_suffix">изрязан</string>
 </resources>

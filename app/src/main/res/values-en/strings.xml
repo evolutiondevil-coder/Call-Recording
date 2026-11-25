@@ -330,4 +330,23 @@
         <item quantity="one">After %d minute</item>
         <item quantity="other">After %d minutes</item>
     </plurals>
+
+    <!-- Trimming -->
+    <string name="action_trim">Trim</string>
+    <string name="trim_title">Trim recording</string>
+    <string name="trim_hint">Drag both ends to choose the part to keep. The sound keeps its quality.</string>
+    <string name="trim_start">Start</string>
+    <string name="trim_end">End</string>
+    <string name="trim_kept">Keeping %s</string>
+    <string name="trim_set_start">Start here</string>
+    <string name="trim_set_end">End here</string>
+    <string name="trim_preview">Play the selection</string>
+    <string name="trim_save_new">Save as a new recording</string>
+    <string name="trim_replace">Replace the original</string>
+    <string name="trim_replace_title">Replace the original?</string>
+    <string name="trim_replace_text">The parts outside the selection will be deleted for good.</string>
+    <string name="trim_saved_new">The selected part was saved as a new recording</string>
+    <string name="trim_replaced">The recording was trimmed</string>
+    <string name="trim_failed">The recording could not be trimmed. Try again.</string>
+    <string name="trim_file_suffix">trimmed</string>
 </resources>

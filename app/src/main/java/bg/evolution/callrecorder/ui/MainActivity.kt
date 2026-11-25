@@ -224,7 +224,7 @@ private fun AppNavigation(
         composable(Routes.PLAYER, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
             val id = entry.arguments?.getLong("id") ?: 0L
             val vm = viewModel(key = "player-$id") { PlayerViewModel(graph, id) }
-            PlayerScreen(vm, onBack = nav::safePop)
+            PlayerScreen(vm, onOpenRecording = { nav.safeNavigate(Routes.player(it)) }, onBack = nav::safePop)
         }
         composable(Routes.SETTINGS) {
             val vm = viewModel { SettingsViewModel(graph) }

@@ -5,10 +5,14 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import bg.evolution.callrecorder.AppGraph
+import bg.evolution.callrecorder.R
+import bg.evolution.callrecorder.core.Logx
 import bg.evolution.callrecorder.data.db.Recording
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,6 +33,17 @@ class PlayerViewModel(private val graph: AppGraph, private val recordingId: Long
         .stateIn(viewModelScope, SharingStarted.Eagerly, Load.Loading)
 
     private val current: Recording? get() = (load.value as? Load.Found)?.recording
+
+    sealed interface TrimState {
+        data object Idle : TrimState
+        data class Working(val replace: Boolean) : TrimState
+        data class Done(val id: Long, val replaced: Boolean) : TrimState
+        data object Failed : TrimState
+    }
+
+    private var cleared = false
+    private val _trim = MutableStateFlow<TrimState>(TrimState.Idle)
+    val trimState: StateFlow<TrimState> = _trim.asStateFlow()
 
     private var loadedUri: String? = null
 
@@ -82,7 +97,44 @@ class PlayerViewModel(private val graph: AppGraph, private val recordingId: Long
         }
     }
 
+    /** Keeps only [startMs]..[endMs]: as a new recording, or in place of this one ([replace]). */
+    fun trim(startMs: Long, endMs: Long, replace: Boolean) {
+        val r = current ?: return
+        if (_trim.value is TrimState.Working) return
+        val total = player.state.value.durationMs.takeIf { it > 0 } ?: r.durationMs
+        _trim.value = TrimState.Working(replace)
+        // The player must let go of a file that is about to be rewritten.
+        if (replace) player.release() else player.pause()
+        val suffix = graph.app.getString(R.string.trim_file_suffix)
+        // Runs on the app's scope, so leaving the screen can't leave a half-finished file behind.
+        graph.scope.launch {
+            val result = runCatching {
+                repo.trim(r, startMs, endMs, total, replace, graph.settings.current.storageTreeUri, suffix)
+            }
+            withContext(Dispatchers.Main) {
+                if (cleared) return@withContext
+                result.onSuccess { id ->
+                    if (replace) {
+                        val updated = repo.get(id)
+                        loadedUri = r.uri
+                        player.load(r.uri, updated?.durationMs ?: (endMs - startMs))
+                    }
+                    _trim.value = TrimState.Done(id, replace)
+                }.onFailure { e ->
+                    Logx.e("Trimming failed", e)
+                    if (replace) player.load(r.uri, r.durationMs)
+                    _trim.value = TrimState.Failed
+                }
+            }
+        }
+    }
+
+    fun trimHandled() {
+        if (_trim.value !is TrimState.Working) _trim.value = TrimState.Idle
+    }
+
     override fun onCleared() {
+        cleared = true
         player.release()
         super.onCleared()
     }

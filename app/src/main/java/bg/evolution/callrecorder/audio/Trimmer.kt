@@ -289,7 +289,7 @@ object Trimmer {
             val rate = if (format.containsKey(MediaFormat.KEY_SAMPLE_RATE)) format.getInteger(MediaFormat.KEY_SAMPLE_RATE) else 16_000
             val frameUs = 1024L * 1_000_000 / rate
             val maxSize = if (format.containsKey(MediaFormat.KEY_MAX_INPUT_SIZE)) format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE) else 0
-            val buffer = ByteBuffer.allocate(maxSize.coerceAtLeast(64 * 1024))
+            val buffer = ByteBuffer.allocateDirect(maxSize.coerceAtLeast(64 * 1024))
             val startUs = startMs * 1000
             val endUs = endMs * 1000
 
