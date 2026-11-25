@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import bg.evolution.callrecorder.R
+import bg.evolution.callrecorder.ui.components.AppLogo
 import bg.evolution.callrecorder.ui.theme.LocalExtraColors
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
@@ -208,17 +209,8 @@ fun SetupScreen(
 
 @Composable
 private fun Hero(onboarding: Boolean) {
-    val extra = LocalExtraColors.current
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier
-                .size(96.dp)
-                .clip(RoundedCornerShape(30.dp))
-                .background(Brush.linearGradient(listOf(extra.heroStart, extra.heroEnd))),
-            contentAlignment = Alignment.Center,
-        ) {
-            Image(painterResource(R.drawable.ic_launcher_foreground), null, modifier = Modifier.size(96.dp))
-        }
+        AppLogo(112.dp)
         Spacer(Modifier.height(20.dp))
         Text(
             stringResource(if (onboarding) R.string.setup_welcome else R.string.setup_title),

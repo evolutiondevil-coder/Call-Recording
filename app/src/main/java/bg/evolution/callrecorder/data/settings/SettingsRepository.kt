@@ -45,7 +45,7 @@ data class AppSettings(
     val storageTreeUri: String? = null,
     val notifyAfterCall: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val dynamicColor: Boolean = true,
+    val dynamicColor: Boolean = false,
     val onboardingDone: Boolean = false,
     /** Check GitHub for a new version on start and download it automatically. */
     val autoUpdate: Boolean = true,

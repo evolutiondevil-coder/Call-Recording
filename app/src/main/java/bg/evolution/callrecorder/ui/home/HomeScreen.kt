@@ -131,6 +131,7 @@ import bg.evolution.callrecorder.data.db.Recording
 import bg.evolution.callrecorder.data.settings.AppSettings
 import bg.evolution.callrecorder.detect.VoipApps
 import bg.evolution.callrecorder.service.RecorderState
+import bg.evolution.callrecorder.ui.components.AppLogo
 import bg.evolution.callrecorder.ui.components.CallerAvatar
 import bg.evolution.callrecorder.ui.components.EmptyState
 import bg.evolution.callrecorder.ui.components.LevelBars
@@ -221,7 +222,13 @@ fun HomeScreen(
                     )
                 } else {
                     LargeTopAppBar(
-                        title = { Text(stringResource(R.string.home_title)) },
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AppLogo(36.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Text(stringResource(R.string.home_title))
+                            }
+                        },
                         actions = {
                             if (rec !is RecorderState.Active) {
                                 IconButton(onClick = startManual) {
@@ -293,6 +300,7 @@ fun HomeScreen(
                             Icons.Rounded.GraphicEq,
                             stringResource(R.string.empty_title),
                             stringResource(R.string.empty_text),
+                            showLogo = true,
                             action = if (rec is RecorderState.Active) null else {
                                 {
                                     FilledTonalButton(onClick = startManual) {

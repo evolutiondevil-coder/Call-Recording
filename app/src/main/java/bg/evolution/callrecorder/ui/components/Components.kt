@@ -188,6 +188,7 @@ fun EmptyState(
     title: String,
     text: String,
     modifier: Modifier = Modifier,
+    showLogo: Boolean = false,
     action: (@Composable () -> Unit)? = null,
 ) {
     Column(
@@ -195,18 +196,22 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(
-            Modifier
-                .size(96.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.tertiaryContainer),
+        if (showLogo) {
+            AppLogo(112.dp)
+        } else {
+            Box(
+                Modifier
+                    .size(96.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.tertiaryContainer),
+                        ),
                     ),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(44.dp))
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(44.dp))
+            }
         }
         Spacer(Modifier.height(24.dp))
         Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
@@ -256,4 +261,14 @@ fun OutlinedCircle(modifier: Modifier = Modifier, color: Color, content: @Compos
         modifier.clip(CircleShape).border(1.dp, color, CircleShape),
         contentAlignment = Alignment.Center,
     ) { content() }
+}
+
+/** The app's logo (the same artwork as the launcher icon). */
+@Composable
+fun AppLogo(size: Dp, modifier: Modifier = Modifier) {
+    Image(
+        androidx.compose.ui.res.painterResource(bg.evolution.callrecorder.R.drawable.app_logo),
+        contentDescription = null,
+        modifier = modifier.size(size),
+    )
 }

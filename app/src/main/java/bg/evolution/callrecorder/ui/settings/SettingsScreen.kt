@@ -7,6 +7,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.ui.platform.LocalContext
 import bg.evolution.callrecorder.core.AppLocale
+import bg.evolution.callrecorder.ui.components.AppLogo
 import bg.evolution.callrecorder.ui.components.UpdateCard
 import bg.evolution.callrecorder.ui.components.isWorthShowing
 import bg.evolution.callrecorder.ui.components.message
@@ -307,7 +308,7 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
         )
         "about" -> AlertDialog(
             onDismissRequest = { dialog = null },
-            icon = { Icon(Icons.Rounded.Info, null) },
+            icon = { AppLogo(88.dp) },
             title = { Text(stringResource(R.string.app_name)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
