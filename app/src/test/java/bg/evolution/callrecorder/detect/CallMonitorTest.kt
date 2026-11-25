@@ -82,8 +82,10 @@ class CallMonitorTest {
     @After
     fun tearDown() = scope.cancel()
 
+    // Only a guard against hanging: on a busy CI machine (lint runs at the same time) the first
+    // settings write after Robolectric starts can take several seconds.
     private fun awaitSettings(predicate: (AppSettings) -> Boolean) = runBlocking {
-        withTimeout(5_000) { settings.settings.first(predicate) }
+        withTimeout(30_000) { settings.settings.first(predicate) }
     }
 
     private fun idle(ms: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(ms))
