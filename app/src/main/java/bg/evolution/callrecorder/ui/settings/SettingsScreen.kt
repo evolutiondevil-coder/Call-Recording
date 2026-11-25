@@ -1,7 +1,6 @@
 package bg.evolution.callrecorder.ui.settings
 
 import android.os.Build
-import android.app.Activity
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.SystemUpdate
@@ -281,9 +280,8 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit, onOpenApps: () -> 
             onSelect = { lang ->
                 if (lang != language) {
                     language = lang
+                    // Saves the choice and recreates the screen so it changes immediately.
                     AppLocale.set(context, lang)
-                    // Android 13+ recreates the screen by itself; older versions need a nudge.
-                    if (Build.VERSION.SDK_INT < 33) (context as? Activity)?.recreate()
                 }
             },
             onDismiss = { dialog = null },

@@ -30,8 +30,8 @@ android {
         applicationId = "bg.evolution.callrecorder"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 5
+        versionName = "1.3.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // GitHub repository whose Releases page the app checks for updates.
         buildConfigField("String", "UPDATE_REPO", "\"evolutiondevil-coder/Call-Recording\"")
